@@ -7,13 +7,12 @@ pygame.init()
 
 FPS = 60
 WIDTH = 800
-HEIGHT = 700
+HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 SPEED = 500
 
 
 def load_image(name, color_key=-1):
-    print(name)
     try:
         fullname = os.path.join('data/', name)
         image = pygame.image.load(fullname).convert()
@@ -33,6 +32,7 @@ def load_image(name, color_key=-1):
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 tile_width = tile_height = 100
+button_sprite = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
@@ -95,27 +95,68 @@ class Camera:
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
 
 
-player, level_x, level_y = generate_level(load_level('lev_1.txt'))
-camera = Camera((level_x, level_y))
-running = True
-let_go = False
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            let_go = True
-        if event.type == pygame.KEYUP and event.key == pygame.K_SPACE:
-            let_go = False
-    if let_go:
-        player.rect.x += ceil(SPEED / FPS)
-    camera.update(player)
-    for sprite in all_sprites:
-        camera.apply(sprite)
-    screen.fill(pygame.Color('black'))
-    all_sprites.draw(screen)
-    tiles_group.draw(screen)
-    player_group.draw(screen)
-    pygame.display.flip()
-    clock.tick(FPS)
-terminate()
+def start_screen():
+    text = ['Welcome to ', '', 'Goose game']
+    background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in text:
+        string_render = font.render(line, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        text_coord += 10
+        string_rect.top = text_coord
+        string_rect.x = 10
+        text_coord += string_rect.height
+        screen.blit(string_render, string_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                menu()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def menu():
+    background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+    image = pygame.transform.scale(load_image('p_button2.png', -1), (300, 100))
+    play_b = pygame.sprite.Sprite(button_sprite)
+    play_b.image = image
+    play_b.rect = play_b.image.get_rect()
+    play_b.rect.x, play_b.rect.y = 50, 50
+    image = pygame.transform.scale(load_image('customize_button.png', -1), (300, 100))
+    custom = pygame.sprite.Sprite(button_sprite)
+    custom.image = image
+    custom.rect = custom.image.get_rect()
+    custom.rect.x, custom.rect.y = 50, 200
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if play_b.rect.x < x < play_b.rect.x + 300 and play_b.rect.y < y < play_b.rect.y + 100:
+                    files = os.listdir(path="levels") # функция для подсчета файлов в папке,
+                    print(len(files)) # будем использовать её для подсчета уровней
+                    print('play')
+                    play()
+                elif custom.rect.x < x < custom.rect.x + 300 and custom.rect.y < y < custom.rect.y + 100:
+                    print('customize')
+                    customizing()
+        button_sprite.draw(screen)
+        pygame.display.flip()
+
+
+def customizing():
+    pass
+
+
+def play():
+    pass
+
+
+start_screen()

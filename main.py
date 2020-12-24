@@ -96,6 +96,8 @@ class Camera:
 
 
 def start_screen():
+    pygame.mixer.music.load('data/sound.mp3')
+    pygame.mixer.music.play(loops=-1)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))

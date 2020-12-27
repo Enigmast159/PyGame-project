@@ -142,12 +142,12 @@ def menu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 if play_b.rect.x < x < play_b.rect.x + 300 and play_b.rect.y < y < play_b.rect.y + 100:
-                    files = os.listdir(path="levels") # функция для подсчета файлов в папке,
-                    print(len(files)) # будем использовать её для подсчета уровней
-                    print('play')
+                    play_b.kill()
+                    custom.kill()
                     play()
                 elif custom.rect.x < x < custom.rect.x + 300 and custom.rect.y < y < custom.rect.y + 100:
-                    print('customize')
+                    play_b.kill()
+                    custom.kill()
                     customizing()
         button_sprite.draw(screen)
         pygame.display.flip()
@@ -158,7 +158,40 @@ def customizing():
 
 
 def play():
-    pass
+    running = True
+    while running:
+        screen.fill((60, 107, 214))
+        files = os.listdir(path="levels")  # функция для подсчета файлов в папке
+        top, right = 50, 100
+        w, h = 100, 100
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                for i in range(len(files)):
+                    name = i
+                    j = i // 5
+                    if j > 0:
+                        i = i - 5 * j
+                    if(right + i * w + i * 10 < x < right + i * w + i * 10 + 100 and
+                       top + j * h + j * 10 < y < top + j * h + j * 10 + 100):
+                        print(files[name])
+        for i in range(len(files)):
+            name = i
+            j = i // 5
+            if j > 0:
+                i = i - 5 * j
+            pygame.draw.rect(screen, pygame.Color('blue'), (right + i * w + i * 10, top + j * h + j * 10, w, h))
+            font = pygame.font.Font(None, 30)
+            text = font.render(str(name + 1), True, (100, 255, 100))
+            text_w = text.get_width()
+            text_h = text.get_height()
+            text_x = right + i * 100 + i * 10 + w // 2 - text_w // 2
+            text_y = top + j * 100 + j * 1 + h // 2 - text_h // 2
+            screen.blit(text, (text_x, text_y))
+        pygame.display.flip()
+    terminate()
 
 
 start_screen()

@@ -157,6 +157,21 @@ def customizing():
     pass
 
 
+def start_level(level_name):
+    level_running = True
+    player, tiles_w, tiles_h = generate_level(load_level(level_name))
+    while level_running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    pass
+        tiles_group.draw(screen)
+        player_group.draw(screen)
+        pygame.display.flip()
+
+
 def play():
     running = True
     while running:

@@ -9,6 +9,7 @@ WIDTH = 800
 HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 SPEED = 500
+GRAVITY = 2
 
 
 def load_image(name, color_key=-1):
@@ -35,8 +36,17 @@ button_sprite = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
-tile_images = {'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100))}
+borders = pygame.sprite.Group()
+tile_images = {'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 player_image = pygame.transform.scale(load_image('goose_pl-1.png'), (100, 100))
+
+
+class Border(pygame.sprite.Sprite):
+    def __init__(self, x1, y1, x2, y2):
+        super().__init__(all_sprites)
+        self.add(borders)
+        self.image = pygame.Surface([1, y2 - y1])
+        self.rect = pygame.Rect(x1, y1, 1, y2 - y1)
 
 
 class Tile(pygame.sprite.Sprite):
@@ -49,13 +59,21 @@ class Tile(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
+        self.s_x, self.s_y = 4, 1
         self.image = player_image
-        self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y + 5)
+        self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
-    def go(self, s_x, s_y):
-        self.rect = self.rect.move(s_x, s_y)
+    def go(self):
+        self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, tiles_group):
-            self.rect = self.rect.move(-s_x, -s_y)
+            self.rect = self.rect.move(self.s_x, -self.s_y)
+            self.s_y = 0
+        if pygame.sprite.spritecollideany(self, borders):
+            self.rect = self.rect.move(-2 * self.s_x, 0)
+        self.s_y += GRAVITY
+
+    def jump(self):
+        self.s_y = -15
 
 
 def terminate():
@@ -78,6 +96,8 @@ def generate_level(level):
             if level[y][x] == '' or level[y][x] == '.':
                 pass
             elif level[y][x] == '#':
+                Border(x * 100, y * 100 + 5, x * 100, (y + 1) * 100 - 5)
+                Border((x + 1) * 100, y * 100 + 5, (x + 1) * 100, (y + 1) * 100 - 5)
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
@@ -167,11 +187,12 @@ def start_level(level_name):
                 terminate()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    pass
+                    player.jump()
         screen.fill((0, 0, 0))
-        player.go(5, 10)
+        player.go()
         tiles_group.draw(screen)
         player_group.draw(screen)
+        all_sprites.draw(screen)
         clock.tick(FPS)
         pygame.display.flip()
 

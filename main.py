@@ -1,7 +1,6 @@
 import os
 import sys
 import pygame
-from math import ceil
 
 pygame.init()
 
@@ -37,7 +36,7 @@ all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 tile_images = {'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100))}
-player_image = pygame.transform.scale(load_image('pl.png'), (100, 100))
+player_image = pygame.transform.scale(load_image('goose_pl-1.png'), (100, 100))
 
 
 class Tile(pygame.sprite.Sprite):
@@ -53,8 +52,10 @@ class Player(pygame.sprite.Sprite):
         self.image = player_image
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y + 5)
 
-    def go(self):
-        self.rect = self.image.get_rect().move(10, 0)
+    def go(self, s_x, s_y):
+        self.rect = self.rect.move(s_x, s_y)
+        if pygame.sprite.spritecollideany(self, tiles_group):
+            self.rect = self.rect.move(-s_x, -s_y)
 
 
 def terminate():
@@ -96,7 +97,7 @@ class Camera:
 
 
 def start_screen():
-    pygame.mixer.music.load('data/sound.mp3')
+    pygame.mixer.music.load('sounds/menu_bg_sound.mp3')
     pygame.mixer.music.play(loops=-1)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
@@ -167,8 +168,11 @@ def start_level(level_name):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     pass
+        screen.fill((0, 0, 0))
+        player.go(5, 10)
         tiles_group.draw(screen)
         player_group.draw(screen)
+        clock.tick(FPS)
         pygame.display.flip()
 
 
@@ -191,7 +195,8 @@ def play():
                         i = i - 5 * j
                     if(right + i * w + i * 10 < x < right + i * w + i * 10 + 100 and
                        top + j * h + j * 10 < y < top + j * h + j * 10 + 100):
-                        print(files[name])
+                        start_level(files[name])
+                        terminate()
         for i in range(len(files)):
             name = i
             j = i // 5

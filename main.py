@@ -36,8 +36,12 @@ all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 borders = pygame.sprite.Group()
-tile_images = {'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
+tile_images = {
+    'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 player_image = pygame.transform.scale(load_image('goose_pl-1.png'), (100, 100))
+sounds = [pygame.mixer.Sound('sounds/menu_bg_sound.mp3'),
+          pygame.mixer.Sound('sounds/level_music.mp3'),
+          pygame.mixer.Sound('sounds/hit_in_border.mp3')]
 
 
 class Border(pygame.sprite.Sprite):
@@ -57,13 +61,13 @@ class Tile(pygame.sprite.Sprite):
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
+        self.hitted = False
         super().__init__(player_group, all_sprites)
         self.s_x, self.s_y = 5, 1
         self.image = player_image
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
     def go(self):
-        print(self.s_x, self.s_y)
         self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, tiles_group):
             self.rect = self.rect.move(self.s_x, -self.s_y)
@@ -71,6 +75,10 @@ class Player(pygame.sprite.Sprite):
             self.s_x = 5
         if pygame.sprite.spritecollideany(self, borders):
             self.rect = self.rect.move(-2 * self.s_x, 0)
+            if not self.hitted:
+                sounds[1].stop()
+                sounds[2].play()
+            self.hitted = True
         self.s_y += GRAVITY
 
     def jump(self):
@@ -119,8 +127,7 @@ class Camera:
 
 
 def start_screen():
-    # pygame.mixer.music.load('sounds/menu_bg_sound.mp3')
-    # pygame.mixer.music.play(loops=-1)
+    sounds[0].play(loops=-1)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -164,11 +171,13 @@ def menu():
                 terminate()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                if play_b.rect.x < x < play_b.rect.x + 300 and play_b.rect.y < y < play_b.rect.y + 100:
+                if play_b.rect.x < x < play_b.rect.x + 300 and \
+                        play_b.rect.y < y < play_b.rect.y + 100:
                     play_b.kill()
                     custom.kill()
                     play()
-                elif custom.rect.x < x < custom.rect.x + 300 and custom.rect.y < y < custom.rect.y + 100:
+                elif custom.rect.x < x < custom.rect.x + 300 and \
+                        custom.rect.y < y < custom.rect.y + 100:
                     play_b.kill()
                     custom.kill()
                     customizing()
@@ -181,6 +190,8 @@ def customizing():
 
 
 def start_level(level_name):
+    sounds[0].stop()
+    sounds[1].play(loops=-1)
     level_running = True
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -195,7 +206,9 @@ def start_level(level_name):
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-        player.go()
+        k = player.go()
+        if k == 1:
+            break
         tiles_group.draw(screen)
         player_group.draw(screen)
         all_sprites.draw(screen)
@@ -229,7 +242,8 @@ def play():
             j = i // 5
             if j > 0:
                 i = i - 5 * j
-            pygame.draw.rect(screen, pygame.Color('blue'), (right + i * w + i * 10, top + j * h + j * 10, w, h))
+            pygame.draw.rect(
+                screen, pygame.Color('blue'), (right + i * w + i * 10, top + j * h + j * 10, w, h))
             font = pygame.font.Font(None, 30)
             text = font.render(str(name + 1), True, (100, 255, 100))
             text_w = text.get_width()

@@ -4,11 +4,10 @@ import pygame
 
 pygame.init()
 
-FPS = 60
+FPS = 30
 WIDTH = 800
 HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
-SPEED = 500
 GRAVITY = 2
 
 
@@ -59,21 +58,24 @@ class Tile(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
-        self.s_x, self.s_y = 4, 1
+        self.s_x, self.s_y = 5, 1
         self.image = player_image
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
     def go(self):
+        print(self.s_x, self.s_y)
         self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, tiles_group):
             self.rect = self.rect.move(self.s_x, -self.s_y)
             self.s_y = 0
+            self.s_x = 5
         if pygame.sprite.spritecollideany(self, borders):
             self.rect = self.rect.move(-2 * self.s_x, 0)
         self.s_y += GRAVITY
 
     def jump(self):
-        self.s_y = -15
+        self.s_y = -30
+        self.s_x = 10
 
 
 def terminate():
@@ -117,8 +119,8 @@ class Camera:
 
 
 def start_screen():
-    pygame.mixer.music.load('sounds/menu_bg_sound.mp3')
-    pygame.mixer.music.play(loops=-1)
+    # pygame.mixer.music.load('sounds/menu_bg_sound.mp3')
+    # pygame.mixer.music.play(loops=-1)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -180,7 +182,8 @@ def customizing():
 
 def start_level(level_name):
     level_running = True
-    player, tiles_w, tiles_h = generate_level(load_level(level_name))
+    player, level_x, level_y = generate_level(load_level(level_name))
+    camera = Camera((level_x, level_y))
     while level_running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -189,6 +192,9 @@ def start_level(level_name):
                 if event.button == 1:
                     player.jump()
         screen.fill((0, 0, 0))
+        camera.update(player)
+        for sprite in all_sprites:
+            camera.apply(sprite)
         player.go()
         tiles_group.draw(screen)
         player_group.draw(screen)

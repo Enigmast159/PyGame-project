@@ -265,6 +265,8 @@ def game_over(level_name):
     custom.image = image
     custom.rect = custom.image.get_rect()
     custom.rect.x, custom.rect.y = 220, 340
+    for sprite in all_sprites:
+        sprite.kill()
     game_over_running = True
     while game_over_running:
         for event in pygame.event.get():

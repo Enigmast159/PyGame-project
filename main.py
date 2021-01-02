@@ -39,9 +39,9 @@ borders = pygame.sprite.Group()
 tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 player_image = pygame.transform.scale(load_image('goose_pl-1.png'), (100, 100))
-sounds = [pygame.mixer.Sound('sounds/menu_bg_sound.mp3'),
-          pygame.mixer.Sound('sounds/level_music.mp3'),
-          pygame.mixer.Sound('sounds/hit_in_border.mp3')]
+# sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
+#          pygame.mixer.Sound('sounds/level_music.mp3'),
+#          pygame.mixer.Sound('sounds/hit_in_border.mp3')]
 
 
 class Border(pygame.sprite.Sprite):
@@ -74,6 +74,7 @@ class Player(pygame.sprite.Sprite):
             self.s_x = 5
         if pygame.sprite.spritecollideany(self, borders):
             self.rect = self.rect.move(-2 * self.s_x, 0)
+            self.kill()
             game_over(level_name)
         self.s_y += GRAVITY
 
@@ -147,7 +148,7 @@ def start_screen():
 
 
 def menu():
-    sounds[0].play(loops=-1)
+    # sounds[0].play(loops=-1)
     background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     image = pygame.transform.scale(load_image('p_button2.png', -1), (300, 100))
@@ -186,8 +187,8 @@ def customizing():
 
 
 def start_level(level_name):
-    sounds[0].stop()
-    sounds[1].play(loops=-1)
+    # sounds[0].stop()
+    # sounds[1].play(loops=-1)
     level_running = True
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -250,8 +251,8 @@ def play():
 
 
 def game_over(level_name):
-    sounds[1].stop()
-    sounds[2].play()
+    # sounds[1].stop()
+    # sounds[2].play()
     background = pygame.transform.scale(load_image('alpha_bg.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     image = pygame.transform.scale(load_image('alpha_again.png', None), (300, 100))

@@ -61,13 +61,12 @@ class Tile(pygame.sprite.Sprite):
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
-        self.hitted = False
         super().__init__(player_group, all_sprites)
         self.s_x, self.s_y = 5, 1
         self.image = player_image
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
-    def go(self):
+    def go(self, level_name):
         self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, tiles_group):
             self.rect = self.rect.move(self.s_x, -self.s_y)
@@ -75,10 +74,7 @@ class Player(pygame.sprite.Sprite):
             self.s_x = 5
         if pygame.sprite.spritecollideany(self, borders):
             self.rect = self.rect.move(-2 * self.s_x, 0)
-            if not self.hitted:
-                sounds[1].stop()
-                sounds[2].play()
-            self.hitted = True
+            game_over(level_name)
         self.s_y += GRAVITY
 
     def jump(self):
@@ -127,7 +123,6 @@ class Camera:
 
 
 def start_screen():
-    sounds[0].play(loops=-1)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -152,6 +147,7 @@ def start_screen():
 
 
 def menu():
+    sounds[0].play(loops=-1)
     background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     image = pygame.transform.scale(load_image('p_button2.png', -1), (300, 100))
@@ -206,9 +202,7 @@ def start_level(level_name):
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-        k = player.go()
-        if k == 1:
-            break
+        player.go(level_name)
         tiles_group.draw(screen)
         player_group.draw(screen)
         all_sprites.draw(screen)
@@ -253,6 +247,43 @@ def play():
             screen.blit(text, (text_x, text_y))
         pygame.display.flip()
     terminate()
+
+
+def game_over(level_name):
+    sounds[1].stop()
+    sounds[2].play()
+    background = pygame.transform.scale(load_image('alpha_bg.png', None), (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+    image = pygame.transform.scale(load_image('alpha_again.png', None), (300, 100))
+    play_b = pygame.sprite.Sprite(button_sprite)
+    play_b.image = image
+    play_b.rect = play_b.image.get_rect()
+    play_b.rect.x, play_b.rect.y = 220, 190
+    image = pygame.transform.scale(load_image('alpha_menu.png', None), (300, 100))
+    custom = pygame.sprite.Sprite(button_sprite)
+    custom.image = image
+    custom.rect = custom.image.get_rect()
+    custom.rect.x, custom.rect.y = 220, 340
+    game_over_running = True
+    while game_over_running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    x, y = event.pos
+                    if play_b.rect.x < x < play_b.rect.x + 300 and \
+                            play_b.rect.y < y < play_b.rect.y + 100:
+                        play_b.kill()
+                        custom.kill()
+                        start_level(level_name)
+                    elif custom.rect.x < x < custom.rect.x + 300 and \
+                            custom.rect.y < y < custom.rect.y + 100:
+                        play_b.kill()
+                        custom.kill()
+                        menu()
+            button_sprite.draw(screen)
+            pygame.display.flip()
 
 
 start_screen()

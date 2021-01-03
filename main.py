@@ -35,6 +35,7 @@ button_sprite = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+spike_group = pygame.sprite.Group()
 borders = pygame.sprite.Group()
 tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
@@ -59,6 +60,13 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
+class Spike(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(spike_group, all_sprites)
+        self.image = pygame.transform.scale(load_image('spikes.png'), (100, 100))
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -73,7 +81,9 @@ class Player(pygame.sprite.Sprite):
             self.s_y = 0
             self.s_x = 5
         if pygame.sprite.spritecollideany(self, borders):
-            self.rect = self.rect.move(-2 * self.s_x, 0)
+            self.kill()
+            game_over(level_name)
+        if pygame.sprite.spritecollideany(self, spike_group):
             self.kill()
             game_over(level_name)
         self.s_y += GRAVITY
@@ -108,6 +118,8 @@ def generate_level(level):
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
+            elif level[y][x] == '^':
+                Spike(x, y)
     return new_player, x, y
 
 
@@ -129,7 +141,7 @@ def start_screen():
     screen.blit(background, (0, 0))
     font = pygame.font.Font(None, 30)
     text_coord = 50
-    for line in text:
+    for line in text    :
         string_render = font.render(line, True, pygame.Color('green'))
         string_rect = string_render.get_rect()
         text_coord += 10
@@ -253,18 +265,8 @@ def play():
 def game_over(level_name):
     # sounds[1].stop()
     # sounds[2].play()
-    background = pygame.transform.scale(load_image('alpha_bg.png', None), (WIDTH, HEIGHT))
+    background = pygame.transform.scale(load_image('game_over.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
-    image = pygame.transform.scale(load_image('alpha_again.png', None), (300, 100))
-    play_b = pygame.sprite.Sprite(button_sprite)
-    play_b.image = image
-    play_b.rect = play_b.image.get_rect()
-    play_b.rect.x, play_b.rect.y = 220, 190
-    image = pygame.transform.scale(load_image('alpha_menu.png', None), (300, 100))
-    custom = pygame.sprite.Sprite(button_sprite)
-    custom.image = image
-    custom.rect = custom.image.get_rect()
-    custom.rect.x, custom.rect.y = 220, 340
     for sprite in all_sprites:
         sprite.kill()
     game_over_running = True
@@ -275,15 +277,9 @@ def game_over(level_name):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     x, y = event.pos
-                    if play_b.rect.x < x < play_b.rect.x + 300 and \
-                            play_b.rect.y < y < play_b.rect.y + 100:
-                        play_b.kill()
-                        custom.kill()
+                    if 320 < x < 480 and 360 < y < 400:
                         start_level(level_name)
-                    elif custom.rect.x < x < custom.rect.x + 300 and \
-                            custom.rect.y < y < custom.rect.y + 100:
-                        play_b.kill()
-                        custom.kill()
+                    elif 320 < x < 480 and 410 < y < 450:
                         menu()
             button_sprite.draw(screen)
             pygame.display.flip()

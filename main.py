@@ -40,9 +40,9 @@ borders = pygame.sprite.Group()
 tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 player_image = pygame.transform.scale(load_image('goose_pl-1.png'), (100, 100))
-# sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
-#          pygame.mixer.Sound('sounds/level_music.mp3'),
-#          pygame.mixer.Sound('sounds/hit_in_border.mp3')]
+sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
+          pygame.mixer.Sound('sounds/level_music.mp3'),
+          pygame.mixer.Sound('sounds/hit_in_border.mp3')]
 
 
 class Border(pygame.sprite.Sprite):
@@ -160,7 +160,8 @@ def start_screen():
 
 
 def menu():
-    # sounds[0].play(loops=-1)
+    sounds[0].play(loops=-1)
+    sounds[0].set_volume(0.2)
     background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     image = pygame.transform.scale(load_image('p_button2.png', -1), (300, 100))
@@ -195,12 +196,46 @@ def menu():
 
 
 def customizing():
-    pass
+    screen.fill((60, 107, 214))
+    image = pygame.transform.scale(load_image('a_btn_1.png'), (300, 100))
+    set_1 = pygame.sprite.Sprite(button_sprite)
+    set_1.image = image
+    set_1.rect = set_1.image.get_rect()
+    set_1.rect.x, set_1.rect.y = 50, 50
+    image = pygame.transform.scale(load_image('a_btn_2.png'), (300, 100))
+    set_2 = pygame.sprite.Sprite(button_sprite)
+    set_2.image = image
+    set_2.rect = set_2.image.get_rect()
+    set_2.rect.x, set_2.rect.y = 50, 200
+    image = pygame.transform.scale(load_image('a_btn_3.png'), (300, 100))
+    set_3 = pygame.sprite.Sprite(button_sprite)
+    set_3.image = image
+    set_3.rect = set_3.image.get_rect()
+    set_3.rect.x, set_3.rect.y = 50, 350
+    custom_running = True
+    while custom_running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if set_1.rect.x < x < set_1.rect.x + 300 and \
+                        set_1.rect.y < y < set_1.rect.y + 100:
+                    pass
+                elif set_2.rect.x < x < set_2.rect.x + 300 and \
+                        set_2.rect.y < y < set_2.rect.y + 100:
+                    pass
+                elif set_3.rect.x < x < set_3.rect.x + 300 and \
+                        set_3.rect.y < y < set_3.rect.y + 100:
+                    pass
+        button_sprite.draw(screen)
+        pygame.display.flip()
 
 
 def start_level(level_name):
-    # sounds[0].stop()
-    # sounds[1].play(loops=-1)
+    sounds[0].stop()
+    sounds[1].play(loops=-1)
+    sounds[1].set_volume(0.2)
     level_running = True
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -211,7 +246,7 @@ def start_level(level_name):
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     player.jump()
-        screen.fill((0, 0, 0))
+        screen.fill((60, 107, 214))
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
@@ -263,8 +298,9 @@ def play():
 
 
 def game_over(level_name):
-    # sounds[1].stop()
-    # sounds[2].play()
+    sounds[1].stop()
+    sounds[2].play()
+    sounds[2].set_volume(0.2)
     background = pygame.transform.scale(load_image('game_over.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     for sprite in all_sprites:

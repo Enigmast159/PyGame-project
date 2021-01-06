@@ -39,7 +39,6 @@ spike_group = pygame.sprite.Group()
 borders = pygame.sprite.Group()
 tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
-player_image = pygame.transform.scale(load_image('goose_pl-1.png'), (100, 100))
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/level_music.mp3'),
           pygame.mixer.Sound('sounds/hit_in_border.mp3')]
@@ -71,12 +70,34 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.s_x, self.s_y = 5, 1
-        self.image = player_image
+        self.count = 0
+        self.jump_p = False
+        self.frames = []
+        for item in os.listdir(path="data/pl_go_anim"):
+            item = 'pl_go_anim/' + item
+            self.frames.append(pygame.transform.scale(load_image(item), (100, 100)))
+        self.frames_jump = []
+        for item in os.listdir(path="data/pl_jump_anim"):
+            item = 'pl_jump_anim/' + item
+            self.frames_jump.append(pygame.transform.scale(load_image(item), (100, 100)))
+        self.cur_jump_frame = 0
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
     def go(self, level_name):
+        if self.count % 5 == 0 and self.jump_p:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+            self.cur_jump_frame = 0
+        elif not self.jump_p:
+            self.cur_jump_frame = (self.cur_jump_frame + 1) % len(self.frames_jump)
+            self.image = self.frames_jump[self.cur_jump_frame]
+        self.count += 1
         self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, tiles_group):
+            self.jump_p = True
             self.rect = self.rect.move(self.s_x, -self.s_y)
             self.s_y = 0
             self.s_x = 5
@@ -89,8 +110,11 @@ class Player(pygame.sprite.Sprite):
         self.s_y += GRAVITY
 
     def jump(self):
-        self.s_y = -30
-        self.s_x = 10
+        if self.jump_p:
+            self.cur_jump_frame = 1
+            self.jump_p = False
+            self.s_y = -30
+            self.s_x = 10
 
 
 def terminate():

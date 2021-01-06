@@ -1,6 +1,7 @@
 import os
 import sys
 import pygame
+import random
 
 pygame.init()
 
@@ -41,6 +42,10 @@ tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/level_music.mp3'),
+          pygame.mixer.Sound('sounds/level_music_2.mp3'),
+          pygame.mixer.Sound('sounds/level_music_3.mp3'),
+          pygame.mixer.Sound('sounds/level_music_4.mp3'),
+          pygame.mixer.Sound('sounds/level_music_5.mp3'),
           pygame.mixer.Sound('sounds/hit_in_border.mp3')]
 
 
@@ -60,9 +65,12 @@ class Tile(pygame.sprite.Sprite):
 
 
 class Spike(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
+    def __init__(self, pos_x, pos_y, placed_down=True):
         super().__init__(spike_group, all_sprites)
-        self.image = pygame.transform.scale(load_image('spikes.png'), (100, 100))
+        if placed_down:
+            self.image = pygame.transform.scale(load_image('spikes.png'), (100, 100))
+        else:
+            self.image = pygame.transform.scale(load_image('up_spikes.png'), (100, 100))
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
@@ -75,18 +83,18 @@ class Player(pygame.sprite.Sprite):
         self.frames = []
         for item in os.listdir(path="data/pl_go_anim"):
             item = 'pl_go_anim/' + item
-            self.frames.append(pygame.transform.scale(load_image(item), (100, 100)))
+            self.frames.append(pygame.transform.scale(load_image(item), (95, 95)))
         self.frames_jump = []
         for item in os.listdir(path="data/pl_jump_anim"):
             item = 'pl_jump_anim/' + item
-            self.frames_jump.append(pygame.transform.scale(load_image(item), (100, 100)))
+            self.frames_jump.append(pygame.transform.scale(load_image(item), (95, 95)))
         self.cur_jump_frame = 0
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
 
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
-    def go(self, level_name):
+    def go(self, level_name, num):
         if self.count % 5 == 0 and self.jump_p:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
@@ -103,10 +111,10 @@ class Player(pygame.sprite.Sprite):
             self.s_x = 5
         if pygame.sprite.spritecollideany(self, borders):
             self.kill()
-            game_over(level_name)
+            game_over(level_name, num)
         if pygame.sprite.spritecollideany(self, spike_group):
             self.kill()
-            game_over(level_name)
+            game_over(level_name, num)
         self.s_y += GRAVITY
 
     def jump(self):
@@ -144,6 +152,8 @@ def generate_level(level):
                 new_player = Player(x, y)
             elif level[y][x] == '^':
                 Spike(x, y)
+            elif level[y][x] == 'v':
+                Spike(x, y, False)
     return new_player, x, y
 
 
@@ -165,7 +175,7 @@ def start_screen():
     screen.blit(background, (0, 0))
     font = pygame.font.Font(None, 30)
     text_coord = 50
-    for line in text    :
+    for line in text:
         string_render = font.render(line, True, pygame.Color('green'))
         string_rect = string_render.get_rect()
         text_coord += 10
@@ -258,8 +268,9 @@ def customizing():
 
 def start_level(level_name):
     sounds[0].stop()
-    sounds[1].play(loops=-1)
-    sounds[1].set_volume(0.2)
+    num = random.randint(1, 5)
+    sounds[num].play(loops=-1)
+    sounds[num].set_volume(0.2)
     level_running = True
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -274,7 +285,7 @@ def start_level(level_name):
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
-        player.go(level_name)
+        player.go(level_name, num)
         tiles_group.draw(screen)
         player_group.draw(screen)
         all_sprites.draw(screen)
@@ -321,10 +332,10 @@ def play():
     terminate()
 
 
-def game_over(level_name):
-    sounds[1].stop()
-    sounds[2].play()
-    sounds[2].set_volume(0.2)
+def game_over(level_name, num):
+    sounds[num].stop()
+    sounds[-1].play()
+    sounds[-1].set_volume(0.2)
     background = pygame.transform.scale(load_image('game_over.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     for sprite in all_sprites:

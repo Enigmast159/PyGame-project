@@ -5,7 +5,7 @@ import random
 
 pygame.init()
 
-FPS = 30
+FPS = 50
 WIDTH = 800
 HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
@@ -83,11 +83,11 @@ class Player(pygame.sprite.Sprite):
         self.frames = []
         for item in os.listdir(path="data/pl_go_anim"):
             item = 'pl_go_anim/' + item
-            self.frames.append(pygame.transform.scale(load_image(item), (95, 95)))
+            self.frames.append(pygame.transform.scale(load_image(item), (80, 80)))
         self.frames_jump = []
         for item in os.listdir(path="data/pl_jump_anim"):
             item = 'pl_jump_anim/' + item
-            self.frames_jump.append(pygame.transform.scale(load_image(item), (95, 95)))
+            self.frames_jump.append(pygame.transform.scale(load_image(item), (80, 80)))
         self.cur_jump_frame = 0
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
@@ -95,20 +95,23 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
     def go(self, level_name, num):
-        if self.count % 5 == 0 and self.jump_p:
+        if self.count % 10 == 0 and self.jump_p:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
             self.cur_jump_frame = 0
         elif not self.jump_p:
-            self.cur_jump_frame = (self.cur_jump_frame + 1) % len(self.frames_jump)
-            self.image = self.frames_jump[self.cur_jump_frame]
+            if self.count % 5 == 0:
+                self.cur_jump_frame = (self.cur_jump_frame + 1) % len(self.frames_jump)
+                self.image = self.frames_jump[self.cur_jump_frame]
         self.count += 1
         self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, tiles_group):
             self.jump_p = True
-            self.rect = self.rect.move(self.s_x, -self.s_y)
+            self.rect = self.rect.move(0, -self.s_y)
             self.s_y = 0
             self.s_x = 5
+        elif not pygame.sprite.spritecollideany(self, tiles_group):
+            self.jump_p = False
         if pygame.sprite.spritecollideany(self, borders):
             self.kill()
             game_over(level_name, num)
@@ -122,7 +125,7 @@ class Player(pygame.sprite.Sprite):
             self.cur_jump_frame = 1
             self.jump_p = False
             self.s_y = -30
-            self.s_x = 10
+            self.s_x = 7
 
 
 def terminate():
@@ -270,7 +273,7 @@ def start_level(level_name):
     sounds[0].stop()
     num = random.randint(1, 5)
     sounds[num].play(loops=-1)
-    sounds[num].set_volume(0.2)
+    sounds[num].set_volume(0.1)
     level_running = True
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -278,9 +281,8 @@ def start_level(level_name):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    player.jump()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                player.jump()
         screen.fill((60, 107, 214))
         camera.update(player)
         for sprite in all_sprites:

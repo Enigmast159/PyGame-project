@@ -38,6 +38,7 @@ tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
 borders = pygame.sprite.Group()
+for_mask = pygame.sprite.Group()
 tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
@@ -51,9 +52,10 @@ sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
 
 class Border(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2):
-        super().__init__(all_sprites)
+        super().__init__(all_sprites, for_mask)
         self.add(borders)
         self.image = pygame.Surface([1, y2 - y1])
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = pygame.Rect(x1, y1, 1, y2 - y1)
 
 
@@ -66,12 +68,13 @@ class Tile(pygame.sprite.Sprite):
 
 class Spike(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, placed_down=True):
-        super().__init__(spike_group, all_sprites)
+        super().__init__(spike_group, all_sprites, for_mask)
         if placed_down:
             self.image = pygame.transform.scale(load_image('spikes.png'), (100, 100))
         else:
             self.image = pygame.transform.scale(load_image('up_spikes.png'), (100, 100))
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+        self.mask = pygame.mask.from_surface(self.image)
 
 
 class Player(pygame.sprite.Sprite):
@@ -91,13 +94,14 @@ class Player(pygame.sprite.Sprite):
         self.cur_jump_frame = 0
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
-
+        self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
     def go(self, level_name, num):
         if self.count % 10 == 0 and self.jump_p:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
             self.image = self.frames[self.cur_frame]
+            self.mask = pygame.mask.from_surface(self.image)
             self.cur_jump_frame = 0
         elif not self.jump_p:
             if self.count % 5 == 0:
@@ -109,15 +113,12 @@ class Player(pygame.sprite.Sprite):
             self.jump_p = True
             self.rect = self.rect.move(0, -self.s_y)
             self.s_y = 0
-            self.s_x = 5
+            self.s_x = 7
         elif not pygame.sprite.spritecollideany(self, tiles_group):
             self.jump_p = False
-        if pygame.sprite.spritecollideany(self, borders):
-            self.kill()
-            game_over(level_name, num)
-        if pygame.sprite.spritecollideany(self, spike_group):
-            self.kill()
-            game_over(level_name, num)
+        for sprite in for_mask:
+            if pygame.sprite.collide_mask(self, sprite):
+                game_over(level_name, num)
         self.s_y += GRAVITY
 
     def jump(self):

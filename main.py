@@ -358,9 +358,12 @@ def start_level(level_name):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    player.jump()
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                player.jump()
-        screen.fill((60, 107, 214))
+                pause()
+        screen.fill(pygame.Color((60, 107, 214)))
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
@@ -370,6 +373,34 @@ def start_level(level_name):
         player_group.draw(screen)
         all_sprites.draw(screen)
         clock.tick(FPS)
+        pygame.display.flip()
+
+
+def pause():
+    image = pygame.transform.scale(load_image('ad.jpg'), (135, 291))
+    ad = pygame.sprite.Sprite(all_sprites)
+    ad.image = image
+    ad.rect = ad.image.get_rect()
+    ad.rect.x, ad.rect.y = 50, 200
+    text = ['Шампунь "Жумайсынба" ', 'Скажи перхоти', 'Көзіме көрінбейтін бол э, түсіндің ба!']
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in text:
+        string_render = font.render(line, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        text_coord += 10
+        string_rect.top = text_coord
+        string_rect.x = 10
+        text_coord += string_rect.height
+        screen.blit(string_render, string_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                ad.kill()
+                return
+        all_sprites.draw(screen)
         pygame.display.flip()
 
 

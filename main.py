@@ -39,6 +39,7 @@ player_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
 borders = pygame.sprite.Group()
 for_mask = pygame.sprite.Group()
+coins = pygame.sprite.Group()
 tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
@@ -48,6 +49,7 @@ sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/level_music_4.mp3'),
           pygame.mixer.Sound('sounds/level_music_5.mp3'),
           pygame.mixer.Sound('sounds/hit_in_border.mp3')]
+COIN = pygame.mixer.Sound('sounds/coin.mp3')
 
 
 class Border(pygame.sprite.Sprite):
@@ -75,6 +77,34 @@ class Spike(pygame.sprite.Sprite):
             self.image = pygame.transform.scale(load_image('up_spikes.png'), (100, 100))
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
         self.mask = pygame.mask.from_surface(self.image)
+
+
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, sheet, columns, rows, x, y, pos_x, pos_y):
+        super().__init__(all_sprites, coins)
+        self.count = 5
+        self.x = x
+        self.y = y
+        self.frames = []
+        self.cut_sheet(sheet, columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0, self.x, self.y)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i + i * 4, self.rect.h * j)
+                self.frames.append(sheet.subsurface(pygame.Rect(
+                    frame_location, self.rect.size)))
+
+    def update(self):
+        if self.count % 5 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+        self.count += 1
 
 
 class Player(pygame.sprite.Sprite):
@@ -119,6 +149,10 @@ class Player(pygame.sprite.Sprite):
         for sprite in for_mask:
             if pygame.sprite.collide_mask(self, sprite):
                 game_over(level_name, num)
+        for sprite in coins:
+            if pygame.sprite.collide_mask(self, sprite):
+                sprite.kill()
+                COIN.play()
         self.s_y += GRAVITY
 
     def jump(self):
@@ -158,6 +192,8 @@ def generate_level(level):
                 Spike(x, y)
             elif level[y][x] == 'v':
                 Spike(x, y, False)
+            elif level[y][x] == '0':
+                Coin(load_image('coin.png', -1), 8, 1, 60, 64, x, y)
     return new_player, x, y
 
 
@@ -288,6 +324,7 @@ def start_level(level_name):
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
+        coins.update()
         player.go(level_name, num)
         tiles_group.draw(screen)
         player_group.draw(screen)

@@ -210,6 +210,8 @@ class Camera:
 
 
 def start_screen():
+    sounds[0].play(loops=-1)
+    sounds[0].set_volume(0.2)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -234,20 +236,23 @@ def start_screen():
 
 
 def menu():
-    sounds[0].play(loops=-1)
-    sounds[0].set_volume(0.2)
     background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
-    image = pygame.transform.scale(load_image('p_button2.png', -1), (300, 100))
+    image = pygame.transform.scale(load_image('p_button2.png'), (300, 100))
     play_b = pygame.sprite.Sprite(button_sprite)
     play_b.image = image
     play_b.rect = play_b.image.get_rect()
     play_b.rect.x, play_b.rect.y = 50, 50
-    image = pygame.transform.scale(load_image('customize_button.png', -1), (300, 100))
+    image = pygame.transform.scale(load_image('customize_button.png'), (300, 100))
     custom = pygame.sprite.Sprite(button_sprite)
     custom.image = image
     custom.rect = custom.image.get_rect()
     custom.rect.x, custom.rect.y = 50, 200
+    image = pygame.transform.scale(load_image('question.png'), (50, 50))
+    question = pygame.sprite.Sprite(button_sprite)
+    question.image = image
+    question.rect = question.image.get_rect()
+    question.rect.x, question.rect.y = 750, 0
     running = True
     while running:
         for event in pygame.event.get():
@@ -259,18 +264,26 @@ def menu():
                         play_b.rect.y < y < play_b.rect.y + 100:
                     play_b.kill()
                     custom.kill()
+                    question.kill()
                     play()
                 elif custom.rect.x < x < custom.rect.x + 300 and \
                         custom.rect.y < y < custom.rect.y + 100:
                     play_b.kill()
                     custom.kill()
+                    question.kill()
                     customizing()
+                elif question.rect.x < x < question.rect.x + 50 and \
+                        question.rect.y < y < question.rect.y + 50:
+                    play_b.kill()
+                    custom.kill()
+                    question.kill()
+                    description()
         button_sprite.draw(screen)
         pygame.display.flip()
 
 
 def customizing():
-    screen.fill((60, 107, 214))
+    screen.fill(pygame.Color(60, 107, 214))
     image = pygame.transform.scale(load_image('a_btn_1.png'), (300, 100))
     set_1 = pygame.sprite.Sprite(button_sprite)
     set_1.image = image
@@ -304,6 +317,33 @@ def customizing():
                     pass
         button_sprite.draw(screen)
         pygame.display.flip()
+
+
+def description():
+    screen.fill(pygame.Color((60, 107, 214)))
+    text = ['Goose game ', 'компьютерная игра в жанре 2D-платформера',
+            'Главный герой - гусь, который проходит',
+            'уровни с множеством препятствий под музыку']
+    background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in text:
+        string_render = font.render(line, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        text_coord += 10
+        string_rect.top = text_coord
+        string_rect.x = 10
+        text_coord += string_rect.height
+        screen.blit(string_render, string_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                menu()
+        pygame.display.flip()
+        clock.tick(FPS)
 
 
 def start_level(level_name):
@@ -391,6 +431,8 @@ def game_over(level_name, num):
                     if 320 < x < 480 and 360 < y < 400:
                         start_level(level_name)
                     elif 320 < x < 480 and 410 < y < 450:
+                        sounds[0].play(loops=-1)
+                        sounds[0].set_volume(0.2)
                         menu()
             button_sprite.draw(screen)
             pygame.display.flip()

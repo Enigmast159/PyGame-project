@@ -149,7 +149,7 @@ class Player(pygame.sprite.Sprite):
         self.count += 1
         self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, portals):
-            win(self.coins_count)
+            win(self.coins_count, num)
         if pygame.sprite.spritecollideany(self, tiles_group):
             self.jump_p = True
             self.rect = self.rect.move(0, -self.s_y)
@@ -197,6 +197,7 @@ def generate_level(level):
             elif level[y][x] == '#':
                 Border(x * 100, y * 100 + 5, x * 100, (y + 1) * 100 - 5)
                 Border((x + 1) * 100, y * 100 + 5, (x + 1) * 100, (y + 1) * 100 - 5)
+                Border((x + 1) * 100 - 5, y * 100 + 95, (x + 1) * 100, (y + 1) * 100)
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
@@ -360,7 +361,7 @@ def description():
         clock.tick(FPS)
 
 
-def win(coins_count):
+def win(coins_count, num):
     global COINS
     text = ['Поздравляю!', 'Вы прошли уровень!', 'Вы собрали ' + str(coins_count) + ' монет',
             '', 'Нажмите любую кнопку,', 'чтобы перейти в меню']
@@ -380,6 +381,8 @@ def win(coins_count):
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 COINS += coins_count
+                sounds[num].stop()
+                sounds[0].play()
                 menu()
         all_sprites.draw(screen)
         pygame.display.flip()
@@ -422,9 +425,19 @@ def pause():
     ad.image = image
     ad.rect = ad.image.get_rect()
     ad.rect.x, ad.rect.y = 50, 200
-    text = ['Шампунь "Жумайсынба" ', 'Скажи перхоти', 'Көзіме көрінбейтін бол э, түсіндің ба!']
+    text = ['                                           PAUSE',
+            'Шампунь "Жумайсынба" ', 'Скажи перхоти',
+            'Көзіме көрінбейтін бол э, түсіндің ба!']
     font = pygame.font.Font(None, 30)
     text_coord = 50
+    string_render = font.render(text[0], True, pygame.Color('blue'))
+    string_rect = string_render.get_rect()
+    text_coord += 10
+    string_rect.top = text_coord
+    string_rect.x = 10
+    text_coord += string_rect.height
+    screen.blit(string_render, string_rect)
+    del text[0]
     for line in text:
         string_render = font.render(line, True, pygame.Color('green'))
         string_rect = string_render.get_rect()

@@ -10,6 +10,7 @@ WIDTH = 800
 HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 GRAVITY = 2
+COINS = 0
 
 
 def load_image(name, color_key=-1):
@@ -40,6 +41,7 @@ spike_group = pygame.sprite.Group()
 borders = pygame.sprite.Group()
 for_mask = pygame.sprite.Group()
 coins = pygame.sprite.Group()
+portals = pygame.sprite.Group()
 tile_images = {
     'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
@@ -54,8 +56,7 @@ COIN = pygame.mixer.Sound('sounds/coin.mp3')
 
 class Border(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2):
-        super().__init__(all_sprites, for_mask)
-        self.add(borders)
+        super().__init__(all_sprites, for_mask, borders)
         self.image = pygame.Surface([1, y2 - y1])
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = pygame.Rect(x1, y1, 1, y2 - y1)
@@ -107,9 +108,17 @@ class Coin(pygame.sprite.Sprite):
         self.count += 1
 
 
+class Portal(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y):
+        super().__init__(portals, all_sprites)
+        self.image = pygame.transform.scale(load_image('portal.jpg'), (80, 100))
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
+        self.coins_count = 0
         self.s_x, self.s_y = 5, 1
         self.count = 0
         self.jump_p = False
@@ -139,6 +148,8 @@ class Player(pygame.sprite.Sprite):
                 self.image = self.frames_jump[self.cur_jump_frame]
         self.count += 1
         self.rect = self.rect.move(self.s_x, self.s_y)
+        if pygame.sprite.spritecollideany(self, portals):
+            win(self.coins_count)
         if pygame.sprite.spritecollideany(self, tiles_group):
             self.jump_p = True
             self.rect = self.rect.move(0, -self.s_y)
@@ -151,6 +162,7 @@ class Player(pygame.sprite.Sprite):
                 game_over(level_name, num)
         for sprite in coins:
             if pygame.sprite.collide_mask(self, sprite):
+                self.coins_count += 1
                 sprite.kill()
                 COIN.play()
         self.s_y += GRAVITY
@@ -194,6 +206,8 @@ def generate_level(level):
                 Spike(x, y, False)
             elif level[y][x] == '0':
                 Coin(load_image('coin.png', -1), 8, 1, 60, 64, x, y)
+            elif level[y][x] == '$':
+                Portal(x, y)
     return new_player, x, y
 
 
@@ -342,6 +356,32 @@ def description():
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 menu()
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def win(coins_count):
+    global COINS
+    text = ['Поздравляю!', 'Вы прошли уровень!', 'Вы собрали ' + str(coins_count) + ' монет',
+            '', 'Нажмите любую кнопку,', 'чтобы перейти в меню']
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in text:
+        string_render = font.render(line, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        text_coord += 10
+        string_rect.top = text_coord
+        string_rect.x = 10
+        text_coord += string_rect.height
+        screen.blit(string_render, string_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                COINS += coins_count
+                menu()
+        all_sprites.draw(screen)
         pygame.display.flip()
         clock.tick(FPS)
 

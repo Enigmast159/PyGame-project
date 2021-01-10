@@ -382,6 +382,8 @@ def win(coins_count, num):
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                 COINS += coins_count
                 sounds[num].stop()
+                for sprite in all_sprites:
+                    sprite.kill()
                 sounds[0].play()
                 menu()
         all_sprites.draw(screen)

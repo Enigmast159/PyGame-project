@@ -197,7 +197,7 @@ def generate_level(level):
             elif level[y][x] == '#':
                 Border(x * 100, y * 100 + 5, x * 100, (y + 1) * 100 - 5)
                 Border((x + 1) * 100, y * 100 + 5, (x + 1) * 100, (y + 1) * 100 - 5)
-                Border((x + 1) * 100 - 5, y * 100 + 95, (x + 1) * 100, (y + 1) * 100)
+                Border(x * 100, y * 100 + 95, (x + 1) * 100, (y + 1) * 100)
                 Tile('wall', x, y)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
@@ -396,6 +396,10 @@ def start_level(level_name):
     num = random.randint(1, 5)
     sounds[num].play(loops=-1)
     sounds[num].set_volume(0.1)
+    sheet = pygame.sprite.Sprite(all_sprites)
+    sheet.image = load_image('coin.png', -1).subsurface(pygame.Rect(0, 0, 60, 64))
+    sheet.rect = sheet.image.get_rect()
+    sheet.rect.x, sheet.rect.y = 60, 0
     level_running = True
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -409,6 +413,7 @@ def start_level(level_name):
             elif event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 pause()
         screen.fill(pygame.Color((60, 107, 214)))
+        sheet.rect = sheet.image.get_rect().move(60, 0)
         camera.update(player)
         for sprite in all_sprites:
             camera.apply(sprite)
@@ -418,6 +423,15 @@ def start_level(level_name):
         player_group.draw(screen)
         all_sprites.draw(screen)
         clock.tick(FPS)
+        ###
+        font = pygame.font.Font(None, 72)
+        text_coord = 10
+        string_render = font.render(str(player.coins_count), True, pygame.Color('yellow'))
+        string_rect = string_render.get_rect()
+        string_rect.top = text_coord
+        string_rect.x = 10
+        screen.blit(string_render, string_rect)
+        ###
         pygame.display.flip()
 
 
@@ -525,3 +539,4 @@ def game_over(level_name, num):
 
 
 start_screen()
+

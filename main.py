@@ -11,6 +11,7 @@ HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 GRAVITY = 2
 COINS = 0
+sound_count = 2
 
 
 def load_image(name, color_key=-1):
@@ -43,7 +44,7 @@ for_mask = pygame.sprite.Group()
 coins = pygame.sprite.Group()
 portals = pygame.sprite.Group()
 tile_images = {
-    'empty': None, 'wall': pygame.transform.scale(load_image('block.jpg'), (100, 100)), 'border': 1}
+    'empty': None, 'wall': pygame.transform.scale(load_image('block2.png'), (100, 100)), 'border': 1}
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/level_music.mp3'),
           pygame.mixer.Sound('sounds/level_music_2.mp3'),
@@ -52,6 +53,15 @@ sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/level_music_5.mp3'),
           pygame.mixer.Sound('sounds/hit_in_border.mp3')]
 COIN = pygame.mixer.Sound('sounds/coin.mp3')
+
+
+def sound_control():
+    if sound_count % 2 != 0:
+        for sound in sounds:
+            sound.set_volume(0)
+    else:
+        for sound in sounds:
+            sound.set_volume(0.2)
 
 
 class Border(pygame.sprite.Sprite):
@@ -111,7 +121,7 @@ class Coin(pygame.sprite.Sprite):
 class Portal(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(portals, all_sprites)
-        self.image = pygame.transform.scale(load_image('portal.jpg'), (80, 100))
+        self.image = pygame.transform.scale(load_image('portal.jpg', None), (80, 100))
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
@@ -251,48 +261,78 @@ def start_screen():
 
 
 def menu():
+    global sound_count
     background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
-    image = pygame.transform.scale(load_image('p_button2.png'), (300, 100))
+    image = pygame.transform.scale(load_image('p_button3_1.png'), (320, 80))
+    sound_onoff = pygame.sprite.Sprite(button_sprite)
+    sound_onoff.image = pygame.transform.scale(load_image('sound_on.png', -1), (50, 50))
+    sound_onoff.rect = sound_onoff.image.get_rect()
+    sound_onoff.rect.x, sound_onoff.rect.y = 720, 520
     play_b = pygame.sprite.Sprite(button_sprite)
     play_b.image = image
     play_b.rect = play_b.image.get_rect()
     play_b.rect.x, play_b.rect.y = 50, 50
-    image = pygame.transform.scale(load_image('customize_button.png'), (300, 100))
+    image = pygame.transform.scale(load_image('cust_button3_1.png'), (320, 80))
     custom = pygame.sprite.Sprite(button_sprite)
     custom.image = image
     custom.rect = custom.image.get_rect()
     custom.rect.x, custom.rect.y = 50, 200
-    image = pygame.transform.scale(load_image('question.png'), (50, 50))
+    image = pygame.transform.scale(load_image('question.png'), (100, 100))
     question = pygame.sprite.Sprite(button_sprite)
     question.image = image
     question.rect = question.image.get_rect()
-    question.rect.x, question.rect.y = 750, 0
+    question.rect.x, question.rect.y = 720, -30
     running = True
     while running:
+        sound_control()
+        screen.blit(background, (0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
+            if event.type == pygame.MOUSEMOTION:
+                x, y = event.pos
+                if play_b.rect.x < x < play_b.rect.x + 320 and \
+                        play_b.rect.y < y < play_b.rect.y + 80:
+                    play_b.image = pygame.transform.scale(load_image('p_button3_2.png'), (320, 80))
+                else:
+                    play_b.image = pygame.transform.scale(load_image('p_button3_1.png'), (320, 80))
+                if custom.rect.x < x < custom.rect.x + 320 and \
+                        custom.rect.y < y < custom.rect.y + 80:
+                    custom.image = pygame.transform.scale(load_image('cust_button3_2.png'), (320, 80))
+                else:
+                    custom.image = pygame.transform.scale(load_image('cust_button3_1.png'), (320, 80))
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                if play_b.rect.x < x < play_b.rect.x + 300 and \
-                        play_b.rect.y < y < play_b.rect.y + 100:
+                if play_b.rect.x < x < play_b.rect.x + 320 and \
+                        play_b.rect.y < y < play_b.rect.y + 80:
                     play_b.kill()
                     custom.kill()
                     question.kill()
+                    sound_onoff.kill()
                     play()
-                elif custom.rect.x < x < custom.rect.x + 300 and \
-                        custom.rect.y < y < custom.rect.y + 100:
+                elif custom.rect.x < x < custom.rect.x + 320 and \
+                        custom.rect.y < y < custom.rect.y + 80:
                     play_b.kill()
                     custom.kill()
                     question.kill()
+                    sound_onoff.kill()
                     customizing()
-                elif question.rect.x < x < question.rect.x + 50 and \
-                        question.rect.y < y < question.rect.y + 50:
+                elif question.rect.x < x < question.rect.x + 100 and \
+                        question.rect.y < y < question.rect.y + 100:
                     play_b.kill()
                     custom.kill()
                     question.kill()
+                    sound_onoff.kill()
                     description()
+                elif sound_onoff.rect.x < x < sound_onoff.rect.x + 50 and \
+                        sound_onoff.rect.y < y < sound_onoff.rect.y + 50:
+                    sound_count += 1
+            if sound_count % 2 != 0:
+                sound_onoff.image = pygame.transform.scale(load_image('sound_off.png'), (50, 50))
+            else:
+                sound_onoff.image = pygame.transform.scale(load_image('sound_on.png'), (50, 50))
         button_sprite.draw(screen)
         pygame.display.flip()
 
@@ -396,6 +436,7 @@ def start_level(level_name):
     num = random.randint(1, 5)
     sounds[num].play(loops=-1)
     sounds[num].set_volume(0.1)
+    sound_control()
     level_running = True
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -502,6 +543,7 @@ def game_over(level_name, num):
     sounds[num].stop()
     sounds[-1].play()
     sounds[-1].set_volume(0.2)
+    sound_control()
     background = pygame.transform.scale(load_image('game_over.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     for sprite in all_sprites:

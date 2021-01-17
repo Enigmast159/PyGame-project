@@ -2,6 +2,7 @@ import os
 import sys
 import pygame
 import random
+import sqlite3
 
 pygame.init()
 
@@ -12,6 +13,7 @@ SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 GRAVITY = 2
 COINS = 0
 sound_count = 2
+set_for_playing = 'Standard'
 
 
 def load_image(name, color_key=-1):
@@ -44,15 +46,17 @@ for_mask = pygame.sprite.Group()
 coins = pygame.sprite.Group()
 portals = pygame.sprite.Group()
 tile_images = {
-    'empty': None, 'wall': pygame.transform.scale(load_image('block2.png'), (100, 100)), 'border': 1}
+    'empty': None, 'wall': pygame.transform.scale(load_image('block2.png'), (100, 100)),
+    'border': 1}
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/level_music.mp3'),
           pygame.mixer.Sound('sounds/level_music_2.mp3'),
           pygame.mixer.Sound('sounds/level_music_3.mp3'),
           pygame.mixer.Sound('sounds/level_music_4.mp3'),
           pygame.mixer.Sound('sounds/level_music_5.mp3'),
+          pygame.mixer.Sound('sounds/store_music.mp3'),
+          pygame.mixer.Sound('sounds/coin.mp3'),
           pygame.mixer.Sound('sounds/hit_in_border.mp3')]
-COIN = pygame.mixer.Sound('sounds/coin.mp3')
 
 
 def sound_control():
@@ -126,19 +130,19 @@ class Portal(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos_x, pos_y):
+    def __init__(self, pos_x, pos_y, way=''):
         super().__init__(player_group, all_sprites)
         self.coins_count = 0
         self.s_x, self.s_y = 5, 1
         self.count = 0
         self.jump_p = False
         self.frames = []
-        for item in os.listdir(path="data/pl_go_anim"):
-            item = 'pl_go_anim/' + item
+        for item in os.listdir(path='data/' + way + "pl_go_anim"):
+            item = way + 'pl_go_anim/' + item
             self.frames.append(pygame.transform.scale(load_image(item), (80, 80)))
         self.frames_jump = []
-        for item in os.listdir(path="data/pl_jump_anim"):
-            item = 'pl_jump_anim/' + item
+        for item in os.listdir(path='data/' + way + "pl_go_anim"):
+            item = way + 'pl_jump_anim/' + item
             self.frames_jump.append(pygame.transform.scale(load_image(item), (80, 80)))
         self.cur_jump_frame = 0
         self.cur_frame = 0
@@ -174,7 +178,7 @@ class Player(pygame.sprite.Sprite):
             if pygame.sprite.collide_mask(self, sprite):
                 self.coins_count += 1
                 sprite.kill()
-                COIN.play()
+                sounds[7].play()
         self.s_y += GRAVITY
 
     def jump(self):
@@ -299,9 +303,11 @@ def menu():
                     play_b.image = pygame.transform.scale(load_image('p_button3_1.png'), (320, 80))
                 if custom.rect.x < x < custom.rect.x + 320 and \
                         custom.rect.y < y < custom.rect.y + 80:
-                    custom.image = pygame.transform.scale(load_image('cust_button3_2.png'), (320, 80))
+                    custom.image = pygame.transform.scale(
+                        load_image('cust_button3_2.png'), (320, 80))
                 else:
-                    custom.image = pygame.transform.scale(load_image('cust_button3_1.png'), (320, 80))
+                    custom.image = pygame.transform.scale(
+                        load_image('cust_button3_1.png'), (320, 80))
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
@@ -338,23 +344,40 @@ def menu():
 
 
 def customizing():
+    global COINS, set_for_playing
+    sounds[0].stop()
+    sounds[6].play(loops=-1)
+    sounds[6].set_volume(0.2)
     screen.fill(pygame.Color(60, 107, 214))
-    image = pygame.transform.scale(load_image('a_btn_1.png'), (300, 100))
+    image = pygame.transform.scale(load_image('a_btn_1.png'), (300, 75))
     set_1 = pygame.sprite.Sprite(button_sprite)
     set_1.image = image
     set_1.rect = set_1.image.get_rect()
     set_1.rect.x, set_1.rect.y = 50, 50
-    image = pygame.transform.scale(load_image('a_btn_2.png'), (300, 100))
+    image = pygame.transform.scale(load_image('a_btn_2.png'), (300, 75))
     set_2 = pygame.sprite.Sprite(button_sprite)
     set_2.image = image
     set_2.rect = set_2.image.get_rect()
     set_2.rect.x, set_2.rect.y = 50, 200
-    image = pygame.transform.scale(load_image('a_btn_3.png'), (300, 100))
+    image = pygame.transform.scale(load_image('a_btn_3.png'), (300, 75))
     set_3 = pygame.sprite.Sprite(button_sprite)
     set_3.image = image
     set_3.rect = set_3.image.get_rect()
     set_3.rect.x, set_3.rect.y = 50, 350
+    image = pygame.transform.scale(load_image('a_buy_btn.png'), (300, 75))
+    buy = pygame.sprite.Sprite(button_sprite)
+    buy.image = image
+    buy.rect = buy.image.get_rect()
+    buy.rect.x, buy.rect.y = 250, 375
+    image = pygame.transform.scale(load_image('a_choose_btn.png'), (300, 75))
+    choose = pygame.sprite.Sprite(button_sprite)
+    choose.image = image
+    choose.rect = choose.image.get_rect()
+    choose.rect.x, choose.rect.y = 445, 380
+    sets_list = ['Standard', 'Farmer', 'Mario', 'Sherlock']
+    pushed = 0
     custom_running = True
+    is_chosen = False
     while custom_running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -362,14 +385,56 @@ def customizing():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 if set_1.rect.x < x < set_1.rect.x + 300 and \
-                        set_1.rect.y < y < set_1.rect.y + 100:
-                    pass
+                        set_1.rect.y < y < set_1.rect.y + 75:
+                    is_chosen = True
+                    pushed = 1
+                    image = pygame.transform.scale(
+                        load_image('farm_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
                 elif set_2.rect.x < x < set_2.rect.x + 300 and \
-                        set_2.rect.y < y < set_2.rect.y + 100:
-                    pass
+                        set_2.rect.y < y < set_2.rect.y + 75:
+                    is_chosen = True
+                    pushed = 2
+                    image = pygame.transform.scale(
+                        load_image('farm_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
                 elif set_3.rect.x < x < set_3.rect.x + 300 and \
-                        set_3.rect.y < y < set_3.rect.y + 100:
-                    pass
+                        set_3.rect.y < y < set_3.rect.y + 75:
+                    is_chosen = True
+                    pushed = 3
+                    image = pygame.transform.scale(
+                        load_image('farm_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
+                elif buy.rect.x < x < buy.rect.x + 300 and \
+                        buy.rect.y < y < buy.rect.y + 75:
+                    if is_chosen:
+                        con = sqlite3.connect('db.db')
+                        cur = con.cursor()
+                        result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
+                                             (sets_list[pushed], )).fetchall()
+                        if not int(result[0][0]):
+                            result = cur.execute("""Select Cost from Sets Where Name=?""",
+                                                 (sets_list[pushed], )).fetchall()
+                            if COINS >= int(result[0][0]):
+                                COINS -= result
+                                result = cur.execute("""UPDATE Sets 
+                                SET Is_buyed = 1
+                                WHERE Name = ?""", (sets_list[pushed], )).fetchall()
+                        con.commit()
+                        con.close()
+                elif choose.rect.x < x < choose.rect.x + 300 and \
+                        choose.rect.y < y < choose.rect.y + 75:
+                    if is_chosen:
+                        con = sqlite3.connect('db.db')
+                        cur = con.cursor()
+                        result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
+                                             (sets_list[pushed], )).fetchall()
+                        con.commit()
+                        con.close()
+                        if result[0][0]:
+                            set_for_playing = sets_list[pushed]
+                if is_chosen:
+                    chosen_set = pygame.sprite.Sprite(button_sprite)
+                    chosen_set.image = image
+                    chosen_set.rect = chosen_set.image.get_rect()
+                    chosen_set.rect.x, chosen_set.rect.y = 450, 175
         button_sprite.draw(screen)
         pygame.display.flip()
 
@@ -464,7 +529,6 @@ def start_level(level_name):
         player_group.draw(screen)
         all_sprites.draw(screen)
         clock.tick(FPS)
-        ###
         font = pygame.font.Font(None, 72)
         text_coord = 10
         string_render = font.render(str(player.coins_count), True, pygame.Color('yellow'))
@@ -472,7 +536,6 @@ def start_level(level_name):
         string_rect.top = text_coord
         string_rect.x = 10
         screen.blit(string_render, string_rect)
-        ###
         pygame.display.flip()
 
 

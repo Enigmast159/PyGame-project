@@ -142,11 +142,11 @@ class Player(pygame.sprite.Sprite):
         self.frames = []
         for item in os.listdir(path='data/' + way + "pl_go_anim"):
             item = way + 'pl_go_anim/' + item
-            self.frames.append(pygame.transform.scale(load_image(item), (80, 80)))
+            self.frames.append(pygame.transform.scale(load_image(item), (80, 100)))
         self.frames_jump = []
         for item in os.listdir(path='data/' + way + "pl_jump_anim"):
             item = way + 'pl_jump_anim/' + item
-            self.frames_jump.append(pygame.transform.scale(load_image(item), (80, 80)))
+            self.frames_jump.append(pygame.transform.scale(load_image(item), (80, 100)))
         self.cur_jump_frame = 0
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
@@ -161,7 +161,10 @@ class Player(pygame.sprite.Sprite):
             self.cur_jump_frame = 0
         elif not self.jump_p:
             if self.count % 5 == 0:
-                self.cur_jump_frame = (self.cur_jump_frame + 1) % len(self.frames_jump)
+                if self.cur_jump_frame == 2:
+                    self.cur_jump_frame = 1
+                else:
+                    self.cur_jump_frame = (self.cur_jump_frame + 1) % len(self.frames_jump)
                 self.image = self.frames_jump[self.cur_jump_frame]
         self.count += 1
         self.rect = self.rect.move(self.s_x, self.s_y)
@@ -186,7 +189,7 @@ class Player(pygame.sprite.Sprite):
 
     def jump(self):
         if self.jump_p:
-            self.cur_jump_frame = 1
+            self.cur_jump_frame = 0
             self.jump_p = False
             self.s_y = -30
             self.s_x = 7
@@ -217,7 +220,7 @@ def generate_level(level):
                 Border(x * 100, y * 100 + 95, (x + 1) * 100, (y + 1) * 100)
                 Tile('wall', x, y)
             elif level[y][x] == '@':
-                new_player = Player(x, y)
+                new_player = Player(x, y, 'mario_goose/')
             elif level[y][x] == '^':
                 Spike(x, y)
             elif level[y][x] == 'v':

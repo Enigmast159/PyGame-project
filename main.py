@@ -220,7 +220,7 @@ def generate_level(level):
                 Border(x * 100, y * 100 + 95, (x + 1) * 100, (y + 1) * 100)
                 Tile('wall', x, y)
             elif level[y][x] == '@':
-                new_player = Player(x, y, 'mario_goose/')
+                new_player = Player(x, y, '')
             elif level[y][x] == '^':
                 Spike(x, y)
             elif level[y][x] == 'v':
@@ -511,6 +511,7 @@ def win(coins_count, num):
     global COINS
     COINS += coins_count
     cur.execute(f"""UPDATE coins SET coins={COINS}""")
+    con.commit()
     text = ['Поздравляю!', 'Вы прошли уровень!', 'Вы собрали ' + str(coins_count) + ' монет',
             '', 'Нажмите любую кнопку,', 'чтобы перейти в меню']
     font = pygame.font.Font(None, 30)

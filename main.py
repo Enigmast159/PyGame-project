@@ -337,6 +337,7 @@ def menu():
                     custom.kill()
                     question.kill()
                     sound_onoff.kill()
+                    sounds[0].stop()
                     description()
                 elif sound_onoff.rect.x < x < sound_onoff.rect.x + 50 and \
                         sound_onoff.rect.y < y < sound_onoff.rect.y + 50:
@@ -429,7 +430,7 @@ def customizing():
                     is_chosen = True
                     pushed = 2
                     image = pygame.transform.scale(
-                        load_image('farm_goose/pl_go_anim/goose_pl-1.png'), (125, 125))
+                        load_image('farm_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
                 elif set_3.rect.x < x < set_3.rect.x + 300 and \
                         set_3.rect.y < y < set_3.rect.y + 75:
                     set_1.image = pygame.transform.scale(load_image('orig_btn-1.png'), (280, 75))
@@ -441,7 +442,7 @@ def customizing():
                     is_chosen = True
                     pushed = 3
                     image = pygame.transform.scale(
-                        load_image('farm_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
+                        load_image('mario_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
                 elif buy.rect.x < x < buy.rect.x + 300 and \
                         buy.rect.y < y < buy.rect.y + 75:
                     if is_chosen:

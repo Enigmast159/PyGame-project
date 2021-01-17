@@ -11,7 +11,10 @@ WIDTH = 800
 HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 GRAVITY = 2
-COINS = 0
+con = sqlite3.connect('db.db')
+cur = con.cursor()
+result = cur.execute("""Select coins from coins""").fetchall()
+COINS = result[0][0]
 sound_count = 2
 set_for_playing = 'Standard'
 
@@ -46,7 +49,7 @@ for_mask = pygame.sprite.Group()
 coins = pygame.sprite.Group()
 portals = pygame.sprite.Group()
 tile_images = {
-    'empty': None, 'wall': pygame.transform.scale(load_image('block2.png'), (100, 100)),
+    'empty': None, 'wall': pygame.transform.scale(load_image('block3.png'), (100, 100)),
     'border': 1}
 sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/level_music.mp3'),
@@ -141,7 +144,7 @@ class Player(pygame.sprite.Sprite):
             item = way + 'pl_go_anim/' + item
             self.frames.append(pygame.transform.scale(load_image(item), (80, 80)))
         self.frames_jump = []
-        for item in os.listdir(path='data/' + way + "pl_go_anim"):
+        for item in os.listdir(path='data/' + way + "pl_jump_anim"):
             item = way + 'pl_jump_anim/' + item
             self.frames_jump.append(pygame.transform.scale(load_image(item), (80, 80)))
         self.cur_jump_frame = 0
@@ -239,8 +242,6 @@ class Camera:
 
 
 def start_screen():
-    sounds[0].play(loops=-1)
-    sounds[0].set_volume(0.2)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -266,6 +267,9 @@ def start_screen():
 
 def menu():
     global sound_count
+    sounds[0].play(loops=-1)
+    sounds[0].set_volume(0.2)
+    sound_control()
     background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     image = pygame.transform.scale(load_image('p_button3_1.png'), (320, 80))
@@ -308,7 +312,6 @@ def menu():
                 else:
                     custom.image = pygame.transform.scale(
                         load_image('cust_button3_1.png'), (320, 80))
-
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 if play_b.rect.x < x < play_b.rect.x + 320 and \
@@ -344,41 +347,57 @@ def menu():
 
 
 def customizing():
-    global COINS, set_for_playing
+    global COINS, set_for_playing, cur
     sounds[0].stop()
     sounds[6].play(loops=-1)
     sounds[6].set_volume(0.2)
+    sound_control()
     screen.fill(pygame.Color(60, 107, 214))
-    image = pygame.transform.scale(load_image('a_btn_1.png'), (300, 75))
+    image = pygame.transform.scale(load_image('orig_btn-1.png'), (280, 75))
     set_1 = pygame.sprite.Sprite(button_sprite)
     set_1.image = image
     set_1.rect = set_1.image.get_rect()
-    set_1.rect.x, set_1.rect.y = 50, 50
-    image = pygame.transform.scale(load_image('a_btn_2.png'), (300, 75))
+    set_1.rect.x, set_1.rect.y = 10, 50
+    image = pygame.transform.scale(load_image('farm_btn-1.png'), (280, 75))
     set_2 = pygame.sprite.Sprite(button_sprite)
     set_2.image = image
     set_2.rect = set_2.image.get_rect()
-    set_2.rect.x, set_2.rect.y = 50, 200
-    image = pygame.transform.scale(load_image('a_btn_3.png'), (300, 75))
+    set_2.rect.x, set_2.rect.y = 10, 200
+    image = pygame.transform.scale(load_image('mar_btn-1.png'), (280, 75))
     set_3 = pygame.sprite.Sprite(button_sprite)
     set_3.image = image
     set_3.rect = set_3.image.get_rect()
-    set_3.rect.x, set_3.rect.y = 50, 350
-    image = pygame.transform.scale(load_image('a_buy_btn.png'), (300, 75))
+    set_3.rect.x, set_3.rect.y = 10, 350
+    image = pygame.transform.scale(load_image('a_buy_btn.png'), (200, 70))
     buy = pygame.sprite.Sprite(button_sprite)
     buy.image = image
     buy.rect = buy.image.get_rect()
-    buy.rect.x, buy.rect.y = 250, 375
-    image = pygame.transform.scale(load_image('a_choose_btn.png'), (300, 75))
+    buy.rect.x, buy.rect.y = 320, 350
+    image = pygame.transform.scale(load_image('a_choose_btn.png'), (200, 70))
     choose = pygame.sprite.Sprite(button_sprite)
     choose.image = image
     choose.rect = choose.image.get_rect()
-    choose.rect.x, choose.rect.y = 445, 380
+    choose.rect.x, choose.rect.y = 550, 350
+    to_menu = pygame.sprite.Sprite(button_sprite)
+    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (300, 75))
+    to_menu.rect = to_menu.image.get_rect()
+    to_menu.rect.x, to_menu.rect.y = 250, 500
     sets_list = ['Standard', 'Farmer', 'Mario', 'Sherlock']
+    image = None
     pushed = 0
     custom_running = True
     is_chosen = False
     while custom_running:
+        screen.fill(pygame.Color(60, 107, 214))
+        text = f'Ваш баланс: {COINS} монет'
+        font = pygame.font.Font(None, 30)
+        text_coord = 10
+        string_render = font.render(text, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        string_rect.top = text_coord
+        string_rect.x = 10
+        text_coord += string_rect.height
+        screen.blit(string_render, string_rect)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
@@ -386,18 +405,36 @@ def customizing():
                 x, y = event.pos
                 if set_1.rect.x < x < set_1.rect.x + 300 and \
                         set_1.rect.y < y < set_1.rect.y + 75:
+                    set_1.image = pygame.transform.scale(load_image('orig_btn-2.png'), (280, 75))
+                    set_2.image = pygame.transform.scale(load_image('farm_btn-1.png'), (280, 75))
+                    set_3.image = pygame.transform.scale(load_image('mar_btn-1.png'), (280, 75))
+                    for sprite in button_sprite:
+                        if sprite.image == image:
+                            sprite.kill()
                     is_chosen = True
                     pushed = 1
                     image = pygame.transform.scale(
-                        load_image('farm_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
+                        load_image('pl_go_anim/goose_pl-2.png'), (125, 125))
                 elif set_2.rect.x < x < set_2.rect.x + 300 and \
                         set_2.rect.y < y < set_2.rect.y + 75:
+                    set_2.image = pygame.transform.scale(load_image('farm_btn-2.png'), (280, 75))
+                    set_1.image = pygame.transform.scale(load_image('orig_btn-1.png'), (280, 75))
+                    set_3.image = pygame.transform.scale(load_image('mar_btn-1.png'), (280, 75))
+                    for sprite in button_sprite:
+                        if sprite.image == image:
+                            sprite.kill()
                     is_chosen = True
                     pushed = 2
                     image = pygame.transform.scale(
-                        load_image('farm_goose/pl_go_anim/goose_pl-2.png'), (125, 125))
+                        load_image('farm_goose/pl_go_anim/goose_pl-1.png'), (125, 125))
                 elif set_3.rect.x < x < set_3.rect.x + 300 and \
                         set_3.rect.y < y < set_3.rect.y + 75:
+                    set_1.image = pygame.transform.scale(load_image('orig_btn-1.png'), (280, 75))
+                    set_2.image = pygame.transform.scale(load_image('farm_btn-1.png'), (280, 75))
+                    set_3.image = pygame.transform.scale(load_image('mar_btn-2.png'), (280, 75))
+                    for sprite in button_sprite:
+                        if sprite.image == image:
+                            sprite.kill()
                     is_chosen = True
                     pushed = 3
                     image = pygame.transform.scale(
@@ -405,8 +442,6 @@ def customizing():
                 elif buy.rect.x < x < buy.rect.x + 300 and \
                         buy.rect.y < y < buy.rect.y + 75:
                     if is_chosen:
-                        con = sqlite3.connect('db.db')
-                        cur = con.cursor()
                         result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
                                              (sets_list[pushed], )).fetchall()
                         if not int(result[0][0]):
@@ -417,19 +452,22 @@ def customizing():
                                 result = cur.execute("""UPDATE Sets 
                                 SET Is_buyed = 1
                                 WHERE Name = ?""", (sets_list[pushed], )).fetchall()
-                        con.commit()
-                        con.close()
                 elif choose.rect.x < x < choose.rect.x + 300 and \
                         choose.rect.y < y < choose.rect.y + 75:
                     if is_chosen:
-                        con = sqlite3.connect('db.db')
-                        cur = con.cursor()
                         result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
                                              (sets_list[pushed], )).fetchall()
                         con.commit()
                         con.close()
                         if result[0][0]:
                             set_for_playing = sets_list[pushed]
+                elif to_menu.rect.x < x < to_menu.rect.x + 300 and \
+                        to_menu.rect.y < y < to_menu.rect.y + 75:
+                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'), (300, 75))
+                    for sprite in button_sprite:
+                        sprite.kill()
+                    sounds[6].stop()
+                    menu()
                 if is_chosen:
                     chosen_set = pygame.sprite.Sprite(button_sprite)
                     chosen_set.image = image
@@ -468,6 +506,8 @@ def description():
 
 def win(coins_count, num):
     global COINS
+    COINS += coins_count
+    cur.execute(f"""UPDATE coins SET coins={COINS}""")
     text = ['Поздравляю!', 'Вы прошли уровень!', 'Вы собрали ' + str(coins_count) + ' монет',
             '', 'Нажмите любую кнопку,', 'чтобы перейти в меню']
     font = pygame.font.Font(None, 30)
@@ -485,7 +525,6 @@ def win(coins_count, num):
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                COINS += coins_count
                 sounds[num].stop()
                 for sprite in all_sprites:
                     sprite.kill()

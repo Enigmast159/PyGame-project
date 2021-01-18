@@ -16,6 +16,7 @@ cur = con.cursor()
 result = cur.execute("""Select coins from coins""").fetchall()
 COINS = result[0][0]
 sound_count = 2
+blocks = {'Standard': 'block.jpg', 'Farmer': 'block3.png', 'Mario': 'block2.png'}
 set_for_playing = 'Standard'
 sets_dict = {'Standard': '', 'Farmer': 'farm_goose/',
              'Mario': 'mario_goose/', 'Sherlock': 'sherlock-goose/'}
@@ -401,6 +402,8 @@ def customizing():
         string_rect.x = 10
         text_coord += string_rect.height
         screen.blit(string_render, string_rect)
+        price = 0
+        text = 'Цена:'
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 terminate()
@@ -453,9 +456,12 @@ def customizing():
                                                  (sets_list[pushed], )).fetchall()
                             if COINS >= int(result[0][0]):
                                 COINS -= int(result[0][0])
-                                result = cur.execute("""UPDATE Sets 
-                                SET Is_buyed = 1
-                                WHERE Name = ?""", (sets_list[pushed], )).fetchall()
+                                cur.execute("""UPDATE Sets 
+                                               SET Is_buyed = 1
+                                               WHERE Name = ?""", (sets_list[pushed], )).fetchall()
+                                cur.execute(f"""UPDATE coins
+                                               SET coins={COINS}""")
+                                con.commit()
                 elif choose.rect.x < x < choose.rect.x + 300 and \
                         choose.rect.y < y < choose.rect.y + 75:
                     if is_chosen:
@@ -472,11 +478,30 @@ def customizing():
                         sprite.kill()
                     sounds[6].stop()
                     menu()
-                if is_chosen:
-                    chosen_set = pygame.sprite.Sprite(button_sprite)
-                    chosen_set.image = image
-                    chosen_set.rect = chosen_set.image.get_rect()
-                    chosen_set.rect.x, chosen_set.rect.y = 450, 175
+        if is_chosen:
+            result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
+                                 (sets_list[pushed],)).fetchall()
+            print(result)
+            if not int(result[0][0]):
+                result = cur.execute("""Select Cost from Sets Where Name=?""",
+                                     (sets_list[pushed],)).fetchall()
+                print(result)
+                price = int(result[0][0])
+                text = text + ' ' + str(price)
+            else:
+                text = 'Куплено'
+            font = pygame.font.Font(None, 30)
+            text_coord = 100
+            string_render = font.render(text, True, pygame.Color('green'))
+            string_rect = string_render.get_rect()
+            string_rect.top = text_coord
+            string_rect.x = 350
+            text_coord += string_rect.height
+            screen.blit(string_render, string_rect)
+            chosen_set = pygame.sprite.Sprite(button_sprite)
+            chosen_set.image = image
+            chosen_set.rect = chosen_set.image.get_rect()
+            chosen_set.rect.x, chosen_set.rect.y = 450, 175
         button_sprite.draw(screen)
         pygame.display.flip()
 
@@ -551,6 +576,7 @@ def start_level(level_name):
     sheet.rect = sheet.image.get_rect()
     sheet.rect.x, sheet.rect.y = 60, 0
     level_running = True
+    tile_images['wall'] = pygame.transform.scale(load_image(blocks[set_for_playing]), (100, 100))
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
     while level_running:

@@ -17,6 +17,8 @@ result = cur.execute("""Select coins from coins""").fetchall()
 COINS = result[0][0]
 sound_count = 2
 set_for_playing = 'Standard'
+sets_dict = {'Standard': '', 'Farmer': 'farm_goose/',
+             'Mario': 'mario_goose/', 'Sherlock': 'sherlock-goose/'}
 
 
 def load_image(name, color_key=-1):
@@ -190,9 +192,10 @@ class Player(pygame.sprite.Sprite):
             self.jump_p = False
             self.s_y = -29
             self.s_x = 8
-
+            
 
 def terminate():
+    con.close()
     pygame.quit()
     sys.exit()
 
@@ -217,7 +220,7 @@ def generate_level(level):
                 Border(x * 100, y * 100 + 95, (x + 1) * 100, (y + 1) * 100)
                 Tile('wall', x, y)
             elif level[y][x] == '@':
-                new_player = Player(x, y, 'farm_goose/')
+                new_player = Player(x, y, sets_dict[set_for_playing])
             elif level[y][x] == '^':
                 Spike(x, y)
             elif level[y][x] == 'v':
@@ -334,7 +337,6 @@ def menu():
                     custom.kill()
                     question.kill()
                     sound_onoff.kill()
-                    sounds[0].stop()
                     description()
                 elif sound_onoff.rect.x < x < sound_onoff.rect.x + 50 and \
                         sound_onoff.rect.y < y < sound_onoff.rect.y + 50:
@@ -383,7 +385,7 @@ def customizing():
     to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (300, 75))
     to_menu.rect = to_menu.image.get_rect()
     to_menu.rect.x, to_menu.rect.y = 250, 500
-    sets_list = ['Standard', 'Farmer', 'Mario', 'Sherlock']
+    sets_list = ['', 'Standard', 'Farmer', 'Mario', 'Sherlock']
     image = None
     pushed = 0
     custom_running = True
@@ -445,11 +447,12 @@ def customizing():
                     if is_chosen:
                         result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
                                              (sets_list[pushed], )).fetchall()
+                        print(result)
                         if not int(result[0][0]):
                             result = cur.execute("""Select Cost from Sets Where Name=?""",
                                                  (sets_list[pushed], )).fetchall()
                             if COINS >= int(result[0][0]):
-                                COINS -= result
+                                COINS -= int(result[0][0])
                                 result = cur.execute("""UPDATE Sets 
                                 SET Is_buyed = 1
                                 WHERE Name = ?""", (sets_list[pushed], )).fetchall()
@@ -458,8 +461,8 @@ def customizing():
                     if is_chosen:
                         result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
                                              (sets_list[pushed], )).fetchall()
+                        print(result)
                         con.commit()
-                        con.close()
                         if result[0][0]:
                             set_for_playing = sets_list[pushed]
                 elif to_menu.rect.x < x < to_menu.rect.x + 300 and \

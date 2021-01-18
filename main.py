@@ -246,6 +246,8 @@ class Camera:
 
 
 def start_screen():
+    sounds[0].play(loops=-1)
+    sounds[0].set_volume(0.2)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -271,8 +273,6 @@ def start_screen():
 
 def menu():
     global sound_count
-    sounds[0].play(loops=-1)
-    sounds[0].set_volume(0.2)
     sound_control()
     background = pygame.transform.scale(load_image('goose2.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -654,6 +654,10 @@ def play():
         files = os.listdir(path="levels")  # функция для подсчета файлов в папке
         top, right = 50, 100
         w, h = 100, 100
+        to_menu = pygame.sprite.Sprite(button_sprite)
+        to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (300, 75))
+        to_menu.rect = to_menu.image.get_rect()
+        to_menu.rect.x, to_menu.rect.y = 250, 500
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -666,8 +670,16 @@ def play():
                         i = i - 5 * j
                     if(right + i * w + i * 10 < x < right + i * w + i * 10 + 100 and
                        top + j * h + j * 10 < y < top + j * h + j * 10 + 100):
+                        for sprite in button_sprite:
+                            sprite.kill()
                         start_level(files[name])
                         terminate()
+                if(to_menu.rect.x < x < to_menu.rect.x + 300 and
+                   to_menu.rect.y < y < to_menu.rect.y + 75):
+                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'), (300, 75))
+                    for sprite in button_sprite:
+                        sprite.kill()
+                    menu()
         for i in range(len(files)):
             name = i
             j = i // 5
@@ -682,6 +694,7 @@ def play():
             text_x = right + i * 100 + i * 10 + w // 2 - text_w // 2
             text_y = top + j * 100 + j * 1 + h // 2 - text_h // 2
             screen.blit(text, (text_x, text_y))
+        button_sprite.draw(screen)
         pygame.display.flip()
     terminate()
 

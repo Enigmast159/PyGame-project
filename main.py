@@ -733,16 +733,26 @@ def pause():
 
 
 def play():
+    files = os.listdir(path="levels")  # функция для подсчета файлов в папке
+    top, right = 50, 100
+    w, h = 100, 100
+    image = pygame.transform.scale(load_image('lev_btn-1.png'), (w, h))
+    to_menu = pygame.sprite.Sprite(button_sprite)
+    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (300, 75))
+    to_menu.rect = to_menu.image.get_rect()
+    to_menu.rect.x, to_menu.rect.y = 250, 500
+    for i in range(len(files)):
+        name = i
+        j = i // 5
+        if j > 0:
+            i = i - 5 * j
+        btn = pygame.sprite.Sprite(button_sprite)
+        btn.image = image
+        btn.rect = btn.image.get_rect()
+        btn.rect.x, btn.rect.y = right + i * w + i * 10, top + j * h + j * 10
     running = True
     while running:
         screen.fill((60, 107, 214))
-        files = os.listdir(path="levels")  # функция для подсчета файлов в папке
-        top, right = 50, 100
-        w, h = 100, 100
-        to_menu = pygame.sprite.Sprite(button_sprite)
-        to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (300, 75))
-        to_menu.rect = to_menu.image.get_rect()
-        to_menu.rect.x, to_menu.rect.y = 250, 500
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
@@ -761,25 +771,35 @@ def play():
                         terminate()
                 if(to_menu.rect.x < x < to_menu.rect.x + 300 and
                    to_menu.rect.y < y < to_menu.rect.y + 75):
-                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'), (300, 75))
                     for sprite in button_sprite:
                         sprite.kill()
                     menu()
+            if event.type == pygame.MOUSEMOTION:
+                x, y = event.pos
+                for sprite in button_sprite:
+                    if(sprite.rect.x < x < sprite.rect.x + w and
+                       sprite.rect.y < y < sprite.rect.y + h):
+                        sprite.image = pygame.transform.scale(load_image('lev_btn-2.png'), (w, h))
+                    else:
+                        sprite.image = pygame.transform.scale(load_image('lev_btn-1.png'), (w, h))
+                if(to_menu.rect.x < x < to_menu.rect.x + 300 and
+                    to_menu.rect.y < y < to_menu.rect.y + 75):
+                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'), (300, 75))
+                else:
+                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (300, 75))
+        button_sprite.draw(screen)
         for i in range(len(files)):
             name = i
             j = i // 5
             if j > 0:
                 i = i - 5 * j
-            pygame.draw.rect(
-                screen, pygame.Color('blue'), (right + i * w + i * 10, top + j * h + j * 10, w, h))
-            font = pygame.font.Font(None, 30)
-            text = font.render(str(name + 1), True, (100, 255, 100))
+            font = pygame.font.Font(None, 35)
+            text = font.render(str(name + 1), True, (250, 17, 102))
             text_w = text.get_width()
             text_h = text.get_height()
             text_x = right + i * 100 + i * 10 + w // 2 - text_w // 2
             text_y = top + j * 100 + j * 1 + h // 2 - text_h // 2
             screen.blit(text, (text_x, text_y))
-        button_sprite.draw(screen)
         pygame.display.flip()
     terminate()
 

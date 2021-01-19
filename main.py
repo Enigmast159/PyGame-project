@@ -348,7 +348,7 @@ def menu():
         sound_control()
         screen.blit(background, (0, 0))
         for event in pygame.event.get():
-          keys = pygame.key.get_pressed()
+            keys = pygame.key.get_pressed()
             if keys[pygame.K_LCTRL] and keys[pygame.K_LSHIFT]:
                 cheating()
             if event.type == pygame.QUIT:

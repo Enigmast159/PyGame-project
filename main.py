@@ -11,6 +11,7 @@ WIDTH = 800
 HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 GRAVITY = 2
+cheated = False
 con = sqlite3.connect('db.db')
 cur = con.cursor()
 result = cur.execute("""Select coins from coins""").fetchall()
@@ -217,8 +218,8 @@ def generate_level(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
         for x in range(len(level[y])):
-            if level[y][x] == '' or level[y][x] == '.':
-                pass
+            if (level[y][x] == '' or level[y][x] == '.') and cheated:
+                Coin(load_image('coin.png', -1), 8, 1, 60, 64, x, y)
             elif level[y][x] == '#':
                 Border(x * 100, y * 100 + 5, x * 100, (y + 1) * 100 - 5)
                 Border((x + 1) * 100, y * 100 + 5, (x + 1) * 100, (y + 1) * 100 - 5)
@@ -247,6 +248,49 @@ class Camera:
 
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
+        
+        
+def cheating():
+    global cheated
+    font = pygame.font.Font(None, 32)
+    clock = pygame.time.Clock()
+    input_box = pygame.Rect(100, 100, 140, 32)
+    color_inactive = pygame.Color('lightskyblue3')
+    color_active = pygame.Color('dodgerblue2')
+    color = color_inactive
+    active = False
+    text = ''
+    done = False
+    while not done:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if input_box.collidepoint(event.pos):
+                    active = not active
+                else:
+                    active = False
+                color = color_active if active else color_inactive
+            if event.type == pygame.KEYDOWN:
+                if active:
+                    if event.key == pygame.K_RETURN:
+                        print(text)
+                        if text.lower() == 'жумайсынба':
+                            cheated = not cheated
+                        return
+                    elif event.key == pygame.K_BACKSPACE:
+                        text = text[:-1]
+                    else:
+                        text += event.unicode
+        screen.fill((30, 30, 30))
+        text_surface = font.render(text, True, color)
+        width = max(200, text_surface.get_width() + 10)
+        input_box.w = width
+        screen.blit(text_surface, (input_box.x + 5, input_box.y + 5))
+        pygame.draw.rect(screen, color, input_box, 2)
+
+        pygame.display.flip()
+        clock.tick(30)
 
 
 def start_screen():
@@ -304,6 +348,9 @@ def menu():
         sound_control()
         screen.blit(background, (0, 0))
         for event in pygame.event.get():
+          keys = pygame.key.get_pressed()
+            if keys[pygame.K_LCTRL] and keys[pygame.K_LSHIFT]:
+                cheating()
             if event.type == pygame.QUIT:
                 terminate()
             if event.type == pygame.MOUSEMOTION:

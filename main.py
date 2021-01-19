@@ -70,8 +70,11 @@ def sound_control():
         for sound in sounds:
             sound.set_volume(0)
     else:
-        for sound in sounds:
-            sound.set_volume(0.2)
+        for i in range(len(sounds)):
+            if i == 7:
+                sounds[i].set_volume(0.2)
+            else:
+                sounds[i].set_volume(0.05)
 
 
 class Border(pygame.sprite.Sprite):
@@ -140,6 +143,7 @@ class Player(pygame.sprite.Sprite):
         super().__init__(player_group, all_sprites)
         self.coins_count = 0
         self.s_x, self.s_y = 5, 1
+        self.score = 0
         self.count = 0
         self.jump_p = False
         self.frames = []
@@ -169,7 +173,7 @@ class Player(pygame.sprite.Sprite):
         self.count += 1
         self.rect = self.rect.move(self.s_x, self.s_y)
         if pygame.sprite.spritecollideany(self, portals):
-            win(self.coins_count, num)
+            win(self.coins_count, num, self.score, level_name)
         if pygame.sprite.spritecollideany(self, tiles_group):
             self.jump_p = True
             self.rect = self.rect.move(0, -self.s_y)
@@ -179,7 +183,7 @@ class Player(pygame.sprite.Sprite):
             self.jump_p = False
         for sprite in for_mask:
             if pygame.sprite.collide_mask(self, sprite):
-                game_over(level_name, num)
+                game_over(level_name, num, self.score, self.coins_count)
         for sprite in coins:
             if pygame.sprite.collide_mask(self, sprite):
                 self.coins_count += 1
@@ -247,7 +251,7 @@ class Camera:
 
 def start_screen():
     sounds[0].play(loops=-1)
-    sounds[0].set_volume(0.2)
+    sounds[0].set_volume(0.05)
     text = ['Welcome to ', '', 'Goose game']
     background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
@@ -450,7 +454,6 @@ def customizing():
                     if is_chosen:
                         result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
                                              (sets_list[pushed], )).fetchall()
-                        print(result)
                         if not int(result[0][0]):
                             result = cur.execute("""Select Cost from Sets Where Name=?""",
                                                  (sets_list[pushed], )).fetchall()
@@ -477,6 +480,7 @@ def customizing():
                     for sprite in button_sprite:
                         sprite.kill()
                     sounds[6].stop()
+                    sounds[0].play(loops=-1)
                     menu()
         if is_chosen:
             result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
@@ -533,13 +537,25 @@ def description():
         clock.tick(FPS)
 
 
-def win(coins_count, num):
+def win(coins_count, num, score, level_name):
     global COINS
     COINS += coins_count
     cur.execute(f"""UPDATE coins SET coins={COINS}""")
+    try:
+        res = cur.execute(f'select Points, max_coins from Statistics where level={level_name}').fetchall()
+    except Exception:
+        cur.execute(f'insert or replace into Statistics values("{level_name}", {score}, {coins_count})')
+        con.commit()
+    else:
+        if res[1][0] < coins_count:
+            cur.execute(f'update Statistics set max_coins={coins_count} and points={score} where level={level_name}')
+        else:
+            cur.execute(f'update Statistics set points={score} where level={level_name}')
     con.commit()
-    text = ['Поздравляю!', 'Вы прошли уровень!', 'Вы собрали ' + str(coins_count) + ' монет',
-            '', 'Нажмите любую кнопку,', 'чтобы перейти в меню']
+    res = cur.execute(f'select Points from Statistics where level="{level_name}"').fetchall()
+    text = ['Поздравляю!', 'Вы прошли уровень!', f'Вы собрали {str(coins_count)} монет',
+            f'Ваш счет: {score}', '', f'Ваш лучший счет: {str(res[0][0])}'
+            'Нажмите любую кнопку,', 'чтобы перейти в меню']
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in text:
@@ -576,6 +592,8 @@ def start_level(level_name):
     sheet.rect = sheet.image.get_rect()
     sheet.rect.x, sheet.rect.y = 60, 0
     level_running = True
+    res = cur.execute(f'select Points from Statistics where level="{level_name}"').fetchall()
+    best_score = res[0][0]
     tile_images['wall'] = pygame.transform.scale(load_image(blocks[set_for_playing]), (100, 100))
     player, level_x, level_y = generate_level(load_level(level_name))
     camera = Camera((level_x, level_y))
@@ -605,6 +623,26 @@ def start_level(level_name):
         string_rect = string_render.get_rect()
         string_rect.top = text_coord
         string_rect.x = 10
+        screen.blit(string_render, string_rect)
+        score = player.count // 2 + 100 * player.coins_count
+        player.score = score
+        text = 'Ваши очки: ' + str(score)
+        font = pygame.font.Font(None, 30)
+        text_coord = 10
+        string_render = font.render(text, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        string_rect.top = text_coord
+        string_rect.x = 600
+        text_coord += string_rect.height
+        screen.blit(string_render, string_rect)
+        text = 'Ваш лучший счет: ' + str(best_score)
+        font = pygame.font.Font(None, 30)
+        text_coord = 10
+        string_render = font.render(text, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        string_rect.top = text_coord
+        string_rect.x = 300
+        text_coord += string_rect.height
         screen.blit(string_render, string_rect)
         pygame.display.flip()
 
@@ -699,11 +737,21 @@ def play():
     terminate()
 
 
-def game_over(level_name, num):
+def game_over(level_name, num, score, coins):
     sounds[num].stop()
     sounds[-1].play()
     sounds[-1].set_volume(0.2)
     sound_control()
+    try:
+        res = cur.execute(f'select Points, max_coins from Statistics where level={level_name}').fetchall()
+    except Exception:
+        cur.execute(f'insert or replace into Statistics values("{level_name}", {score}, {coins})')
+        con.commit()
+    else:
+        if res[1][0] < coins:
+            cur.execute(f'update Statistics set max_coins={coins} and points={score} where level={level_name}')
+        else:
+            cur.execute(f'update Statistics set points={score} where level={level_name}')
     background = pygame.transform.scale(load_image('game_over.png', None), (WIDTH, HEIGHT))
     screen.blit(background, (0, 0))
     for sprite in all_sprites:

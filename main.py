@@ -1,17 +1,19 @@
+# импортируем нужные библеотеки
 import os
 import sys
 import pygame
 import random
 import sqlite3
 
+# инициализация pygame'a
 pygame.init()
 
+# объявление констант
 FPS = 50
 WIDTH = 800
 HEIGHT = 600
 SCREEN_RECT = (0, 0, WIDTH, HEIGHT)
 GRAVITY = 2
-cheated = False
 con = sqlite3.connect('db.db')
 cur = con.cursor()
 result = cur.execute("""Select coins from coins""").fetchall()
@@ -23,6 +25,7 @@ sets_dict = {'Standard': '', 'Farmer': 'farm_goose/',
              'Mario': 'mario_goose/', 'Sherlock': 'sherlock-goose/'}
 
 
+# функция для загрузки изображений
 def load_image(name, color_key=-1):
     try:
         fullname = os.path.join('data/', name)
@@ -40,6 +43,7 @@ def load_image(name, color_key=-1):
     return image
 
 
+# объявление важныъ списков переменных и групп
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 tile_width = tile_height = 100
@@ -64,8 +68,10 @@ sounds = [pygame.mixer.Sound('sounds/menu_music.mp3'),
           pygame.mixer.Sound('sounds/store_music.mp3'),
           pygame.mixer.Sound('sounds/coin.mp3'),
           pygame.mixer.Sound('sounds/hit_in_border.mp3')]
+cheated = False
 
 
+# функция для контролирования звука
 def sound_control():
     if sound_count % 2 != 0:
         for sound in sounds:
@@ -78,6 +84,7 @@ def sound_control():
                 sounds[i].set_volume(0.05)
 
 
+# класс барьеров вокруг блоков
 class Border(pygame.sprite.Sprite):
     def __init__(self, x1, y1, x2, y2):
         super().__init__(all_sprites, for_mask, borders)
@@ -86,6 +93,7 @@ class Border(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x1, y1, 1, y2 - y1)
 
 
+# класс блоков и пустоты
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
@@ -93,6 +101,7 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
+# класс шипов
 class Spike(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, placed_down=True):
         super().__init__(spike_group, all_sprites, for_mask)
@@ -104,6 +113,7 @@ class Spike(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
 
+# класс монеток
 class Coin(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y, pos_x, pos_y):
         super().__init__(all_sprites, coins)
@@ -117,6 +127,7 @@ class Coin(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
+    # нарезаем фреймы
     def cut_sheet(self, sheet, columns, rows):
         self.rect = pygame.Rect(0, 0, self.x, self.y)
         for j in range(rows):
@@ -125,6 +136,7 @@ class Coin(pygame.sprite.Sprite):
                 self.frames.append(sheet.subsurface(pygame.Rect(
                     frame_location, self.rect.size)))
 
+    # обновление
     def update(self):
         if self.count % 5 == 0:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
@@ -132,6 +144,7 @@ class Coin(pygame.sprite.Sprite):
         self.count += 1
 
 
+# класс портала, для прохождения уровня
 class Portal(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(portals, all_sprites)
@@ -139,6 +152,7 @@ class Portal(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
+# игроки
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, way=''):
         super().__init__(player_group, all_sprites)
@@ -161,6 +175,7 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
         self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y)
 
+    # функция для ходьбы и прыжка персонажа
     def go(self, level_name, num):
         if self.count % 10 == 0 and self.jump_p:
             self.cur_frame = (self.cur_frame + 1) % len(self.frames)
@@ -192,6 +207,7 @@ class Player(pygame.sprite.Sprite):
                 sounds[7].play()
         self.s_y += GRAVITY
 
+    # функция прыжка
     def jump(self):
         if self.jump_p:
             self.cur_jump_frame = 0
@@ -200,12 +216,14 @@ class Player(pygame.sprite.Sprite):
             self.s_x = 8
 
 
+# функция прекращения работы
 def terminate():
     con.close()
     pygame.quit()
     sys.exit()
 
 
+# функция загрузки уровня
 def load_level(filename):
     filename = 'levels/' + filename
     with open(filename, 'r') as map_file:
@@ -214,6 +232,7 @@ def load_level(filename):
     return list(map(lambda line: line.ljust(max_width, '.'), level_map))
 
 
+# функция генерирования уровня
 def generate_level(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
@@ -238,6 +257,7 @@ def generate_level(level):
     return new_player, x, y
 
 
+# класс камеры
 class Camera:
     def __init__(self, field_size):
         self.dx = 0
@@ -250,6 +270,7 @@ class Camera:
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
 
 
+# функция включения чит-режима)
 def cheating():
     global cheated
     font = pygame.font.Font(None, 32)
@@ -293,6 +314,7 @@ def cheating():
         clock.tick(30)
 
 
+# функция статового экрана
 def start_screen():
     sounds[0].play(loops=-1)
     sounds[0].set_volume(0.05)
@@ -318,7 +340,7 @@ def start_screen():
         pygame.display.flip()
         clock.tick(FPS)
 
-
+# функция обработки списка из дб
 def transform(s):
     s = list(s)
     s[0] = s[0].strip('.txt').strip('lev_')
@@ -329,6 +351,7 @@ def transform(s):
     return ''.join(s)
 
 
+# функция меню статистики
 def statistics():
     image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (320, 80))
     to_menu = pygame.sprite.Sprite(button_sprite)
@@ -373,6 +396,7 @@ def statistics():
         pygame.display.flip()
 
 
+# функция главного меню
 def menu():
     global sound_count
     sound_control()
@@ -476,6 +500,7 @@ def menu():
         pygame.display.flip()
 
 
+# функция меню кастомизации
 def customizing():
     global COINS, set_for_playing, cur
     sounds[0].stop()
@@ -629,6 +654,7 @@ def customizing():
         pygame.display.flip()
 
 
+# функция описания
 def description():
     screen.fill(pygame.Color((60, 107, 214)))
     text = ['Goose game ', 'компьютерная игра в жанре 2D-платформера',
@@ -656,6 +682,7 @@ def description():
         clock.tick(FPS)
 
 
+# функция выйграша
 def win(coins_count, num, score, level_name):
     global COINS
     COINS += coins_count
@@ -703,7 +730,7 @@ def win(coins_count, num, score, level_name):
         pygame.display.flip()
         clock.tick(FPS)
 
-
+# функция самого уровня(загрузка и основной цикл уровня)
 def start_level(level_name):
     sounds[0].stop()
     num = random.randint(1, 5)
@@ -777,6 +804,7 @@ def start_level(level_name):
         pygame.display.flip()
 
 
+# функция паузы
 def pause():
     image = pygame.transform.scale(load_image('ad.jpg'), (135, 291))
     ad = pygame.sprite.Sprite(all_sprites)
@@ -815,6 +843,7 @@ def pause():
         pygame.display.flip()
 
 
+# функция выбора уровня
 def play():
     files = os.listdir(path="levels")  # функция для подсчета файлов в папке
     top, right = 50, 100
@@ -889,6 +918,7 @@ def play():
     terminate()
 
 
+# функция проигрыша
 def game_over(level_name, num, score, coins):
     sounds[num].stop()
     sounds[-1].play()
@@ -969,4 +999,5 @@ def game_over(level_name, num, score, coins):
             pygame.display.flip()
 
 
+# запуск
 start_screen()

@@ -43,7 +43,7 @@ def load_image(name, color_key=-1):
     return image
 
 
-# объявление важныъ списков переменных и групп
+# объявление важных списков, переменных и групп
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 tile_width = tile_height = 100
@@ -152,7 +152,7 @@ class Portal(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
 
-# игроки
+# класс игрока
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y, way=''):
         super().__init__(player_group, all_sprites)
@@ -232,7 +232,7 @@ def load_level(filename):
     return list(map(lambda line: line.ljust(max_width, '.'), level_map))
 
 
-# функция генерирования уровня
+# функция генерации уровня
 def generate_level(level):
     new_player, x, y = None, None, None
     for y in range(len(level)):
@@ -682,7 +682,7 @@ def description():
         clock.tick(FPS)
 
 
-# функция выйграша
+# функция выйгрыша
 def win(coins_count, num, score, level_name):
     global COINS
     COINS += coins_count

@@ -198,7 +198,7 @@ class Player(pygame.sprite.Sprite):
             self.jump_p = False
             self.s_y = -29
             self.s_x = 8
-            
+
 
 def terminate():
     con.close()
@@ -248,8 +248,8 @@ class Camera:
 
     def update(self, target):
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
-        
-        
+
+
 def cheating():
     global cheated
     font = pygame.font.Font(None, 32)
@@ -319,6 +319,60 @@ def start_screen():
         clock.tick(FPS)
 
 
+def transform(s):
+    s = list(s)
+    s[0] = s[0].strip('.txt').strip('lev_')
+    s[1] = str(s[1])
+    s[2] = str(s[2])
+    s[0] = s[0] + ' ' * (19 - len(s[0]))
+    s[1] = s[1] + ' ' * 2 * (8 - len(s[1]))
+    return ''.join(s)
+
+
+def statistics():
+    image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (320, 80))
+    to_menu = pygame.sprite.Sprite(button_sprite)
+    to_menu.image = image
+    to_menu.rect = to_menu.image.get_rect()
+    to_menu.rect.x, to_menu.rect.y = 250, 500
+    res = ['Уровень   Очки   Монеты']
+    res += list(map(transform, cur.execute('select * from Statistics order by level').fetchall()))
+    background = pygame.transform.scale(load_image('goose1.png', None), (WIDTH, HEIGHT))
+    screen.blit(background, (0, 0))
+    font = pygame.font.Font(None, 34)
+    text_coord = 50
+    for line in res:
+        string_render = font.render(line, True, pygame.Color('green'))
+        string_rect = string_render.get_rect()
+        text_coord += 10
+        string_rect.top = text_coord
+        string_rect.x = 10
+        text_coord += string_rect.height
+        screen.blit(string_render, string_rect)
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            if event.type == pygame.MOUSEMOTION:
+                x, y = event.pos
+                if to_menu.rect.x < x < to_menu.rect.x + 320 and \
+                        to_menu.rect.y < y < to_menu.rect.y + 80:
+                    to_menu.image = pygame.transform.scale(
+                        load_image('to_menu_btn-2.png'), (320, 80))
+                else:
+                    to_menu.image = pygame.transform.scale(
+                        load_image('to_menu_btn-1.png'), (320, 80))
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if to_menu.rect.x < x < to_menu.rect.x + 320 and \
+                        to_menu.rect.y < y < to_menu.rect.y + 80:
+                    to_menu.kill()
+                    menu()
+        button_sprite.draw(screen)
+        pygame.display.flip()
+
+
 def menu():
     global sound_count
     sound_control()
@@ -343,6 +397,11 @@ def menu():
     question.image = image
     question.rect = question.image.get_rect()
     question.rect.x, question.rect.y = 720, -30
+    image = pygame.transform.scale(load_image('cust_button3_1.png'), (320, 80))
+    stats = pygame.sprite.Sprite(button_sprite)
+    stats.image = image
+    stats.rect = stats.image.get_rect()
+    stats.rect.x, stats.rect.y = 50, 350
     running = True
     while running:
         sound_control()
@@ -373,6 +432,7 @@ def menu():
                         play_b.rect.y < y < play_b.rect.y + 80:
                     play_b.kill()
                     custom.kill()
+                    stats.kill()
                     question.kill()
                     sound_onoff.kill()
                     play()
@@ -381,15 +441,25 @@ def menu():
                     play_b.kill()
                     custom.kill()
                     question.kill()
+                    stats.kill()
                     sound_onoff.kill()
                     customizing()
                 elif question.rect.x < x < question.rect.x + 100 and \
                         question.rect.y < y < question.rect.y + 100:
                     play_b.kill()
                     custom.kill()
+                    stats.kill()
                     question.kill()
                     sound_onoff.kill()
                     description()
+                elif stats.rect.x < x < stats.rect.x + 320 and \
+                        stats.rect.y < y < stats.rect.y + 80:
+                    play_b.kill()
+                    stats.kill()
+                    custom.kill()
+                    question.kill()
+                    sound_onoff.kill()
+                    statistics()
                 elif sound_onoff.rect.x < x < sound_onoff.rect.x + 50 and \
                         sound_onoff.rect.y < y < sound_onoff.rect.y + 50:
                     sound_count += 1
@@ -453,7 +523,6 @@ def customizing():
         string_rect.x = 10
         text_coord += string_rect.height
         screen.blit(string_render, string_rect)
-        price = 0
         text = 'Цена:'
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -500,15 +569,15 @@ def customizing():
                         buy.rect.y < y < buy.rect.y + 75:
                     if is_chosen:
                         result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
-                                             (sets_list[pushed], )).fetchall()
+                                             (sets_list[pushed],)).fetchall()
                         if not int(result[0][0]):
                             result = cur.execute("""Select Cost from Sets Where Name=?""",
-                                                 (sets_list[pushed], )).fetchall()
+                                                 (sets_list[pushed],)).fetchall()
                             if COINS >= int(result[0][0]):
                                 COINS -= int(result[0][0])
                                 cur.execute("""UPDATE Sets 
                                                SET Is_buyed = 1
-                                               WHERE Name = ?""", (sets_list[pushed], )).fetchall()
+                                               WHERE Name = ?""", (sets_list[pushed],)).fetchall()
                                 cur.execute(f"""UPDATE coins
                                                SET coins={COINS}""")
                                 con.commit()
@@ -516,14 +585,14 @@ def customizing():
                         choose.rect.y < y < choose.rect.y + 75:
                     if is_chosen:
                         result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
-                                             (sets_list[pushed], )).fetchall()
-                        print(result)
+                                             (sets_list[pushed],)).fetchall()
                         con.commit()
                         if result[0][0]:
                             set_for_playing = sets_list[pushed]
                 elif to_menu.rect.x < x < to_menu.rect.x + 300 and \
                         to_menu.rect.y < y < to_menu.rect.y + 75:
-                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'), (300, 75))
+                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'),
+                                                           (300, 75))
                     for sprite in button_sprite:
                         sprite.kill()
                     sounds[6].stop()
@@ -532,11 +601,9 @@ def customizing():
         if is_chosen:
             result = cur.execute("""Select Is_buyed from Sets Where Name=?""",
                                  (sets_list[pushed],)).fetchall()
-            print(result)
             if not int(result[0][0]):
                 result = cur.execute("""Select Cost from Sets Where Name=?""",
                                      (sets_list[pushed],)).fetchall()
-                print(result)
                 price = int(result[0][0])
                 text = text + ' ' + str(price)
             else:
@@ -589,19 +656,23 @@ def win(coins_count, num, score, level_name):
     COINS += coins_count
     cur.execute(f"""UPDATE coins SET coins={COINS}""")
     try:
-        res = cur.execute(f'select Points, max_coins from Statistics where level={level_name}').fetchall()
+        res = cur.execute(
+            f'select Points, max_coins from Statistics where level={level_name}').fetchall()
     except Exception:
-        cur.execute(f'insert or replace into Statistics values("{level_name}", {score}, {coins_count})')
+        cur.execute(
+            f'insert or replace into Statistics values("{level_name}", {score}, {coins_count})')
         con.commit()
     else:
         if res[1][0] < coins_count:
-            cur.execute(f'update Statistics set max_coins={coins_count} and points={score} where level={level_name}')
+            cur.execute(
+                f'update Statistics set max_coins={coins_count} and points={score} '
+                f'where level={level_name}')
         else:
             cur.execute(f'update Statistics set points={score} where level={level_name}')
     con.commit()
     res = cur.execute(f'select Points from Statistics where level="{level_name}"').fetchall()
     text = ['Поздравляю!', 'Вы прошли уровень!', f'Вы собрали {str(coins_count)} монет',
-            f'Ваш счет: {score}', '', f'Ваш лучший счет: {str(res[0][0])}'
+            f'Ваш счет: {score}', '', f'Ваш лучший счет: {str(res[0][0])}',
             'Нажмите любую кнопку,', 'чтобы перейти в меню']
     font = pygame.font.Font(None, 30)
     text_coord = 50
@@ -682,7 +753,7 @@ def start_level(level_name):
         string_rect.x = 600
         text_coord += string_rect.height
         screen.blit(string_render, string_rect)
-        text = 'Ваш лучший счет: ' + str(best_score)
+        text = 'Ваш последний счет: ' + str(best_score)
         font = pygame.font.Font(None, 30)
         text_coord = 10
         string_render = font.render(text, True, pygame.Color('green'))
@@ -763,30 +834,32 @@ def play():
                     j = i // 5
                     if j > 0:
                         i = i - 5 * j
-                    if(right + i * w + i * 10 < x < right + i * w + i * 10 + 100 and
-                       top + j * h + j * 10 < y < top + j * h + j * 10 + 100):
+                    if (right + i * w + i * 10 < x < right + i * w + i * 10 + 100 and
+                            top + j * h + j * 10 < y < top + j * h + j * 10 + 100):
                         for sprite in button_sprite:
                             sprite.kill()
                         start_level(files[name])
                         terminate()
-                if(to_menu.rect.x < x < to_menu.rect.x + 300 and
-                   to_menu.rect.y < y < to_menu.rect.y + 75):
+                if (to_menu.rect.x < x < to_menu.rect.x + 300 and
+                        to_menu.rect.y < y < to_menu.rect.y + 75):
                     for sprite in button_sprite:
                         sprite.kill()
                     menu()
             if event.type == pygame.MOUSEMOTION:
                 x, y = event.pos
                 for sprite in button_sprite:
-                    if(sprite.rect.x < x < sprite.rect.x + w and
-                       sprite.rect.y < y < sprite.rect.y + h):
+                    if (sprite.rect.x < x < sprite.rect.x + w and
+                            sprite.rect.y < y < sprite.rect.y + h):
                         sprite.image = pygame.transform.scale(load_image('lev_btn-2.png'), (w, h))
                     else:
                         sprite.image = pygame.transform.scale(load_image('lev_btn-1.png'), (w, h))
-                if(to_menu.rect.x < x < to_menu.rect.x + 300 and
-                    to_menu.rect.y < y < to_menu.rect.y + 75):
-                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'), (300, 75))
+                if (to_menu.rect.x < x < to_menu.rect.x + 300 and
+                        to_menu.rect.y < y < to_menu.rect.y + 75):
+                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-2.png'),
+                                                           (300, 75))
                 else:
-                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'), (300, 75))
+                    to_menu.image = pygame.transform.scale(load_image('to_menu_btn-1.png'),
+                                                           (300, 75))
         button_sprite.draw(screen)
         for i in range(len(files)):
             name = i
@@ -810,13 +883,16 @@ def game_over(level_name, num, score, coins):
     sounds[-1].set_volume(0.2)
     sound_control()
     try:
-        res = cur.execute(f'select Points, max_coins from Statistics where level={level_name}').fetchall()
+        res = cur.execute(
+            f'select Points, max_coins from Statistics where level={level_name}').fetchall()
     except Exception:
         cur.execute(f'insert or replace into Statistics values("{level_name}", {score}, {coins})')
         con.commit()
     else:
         if res[1][0] < coins:
-            cur.execute(f'update Statistics set max_coins={coins} and points={score} where level={level_name}')
+            cur.execute(
+                f'update Statistics set max_coins={coins} and points={score} '
+                f'where level={level_name}')
         else:
             cur.execute(f'update Statistics set points={score} where level={level_name}')
     background = pygame.transform.scale(load_image('game_over.png', None), (WIDTH, HEIGHT))
